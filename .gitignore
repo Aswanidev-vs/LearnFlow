@@ -1,0 +1,8 @@
+.env
+*.exe
+node_modules/
+dist/
+*.log
+.DS_Store
+Thumbs.db
+web/clerk-javascript/node_modules/

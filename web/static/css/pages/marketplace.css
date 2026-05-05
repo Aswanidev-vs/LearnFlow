@@ -1,0 +1,124 @@
+.marketplace-page__header {
+  margin-bottom: var(--space-6);
+}
+
+.marketplace-page__title {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+}
+
+.marketplace-page__subtitle {
+  color: var(--color-text-muted);
+  margin-top: var(--space-2);
+}
+
+.marketplace-page__filters {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.marketplace-page__filters .form-input {
+  flex: 1;
+}
+
+.marketplace-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.gig-detail__header {
+  margin-bottom: var(--space-6);
+}
+
+.gig-detail__content {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: var(--space-8);
+}
+
+.gig-detail__client {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.gig-detail__client-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.gig-detail__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--space-3);
+}
+
+.gig-detail__meta {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-6);
+}
+
+.gig-detail__description {
+  margin-bottom: var(--space-6);
+}
+
+.gig-detail__description h3 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--space-3);
+}
+
+.gig-detail__skills {
+  margin-bottom: var(--space-6);
+}
+
+.gig-detail__skills h3 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--space-3);
+}
+
+.gig-detail__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.gig-detail__budget h3 {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.gig-detail__budget-value {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-primary);
+  margin-bottom: var(--space-1);
+}
+
+.gig-detail__info-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.gig-detail__info-item:last-child {
+  border-bottom: none;
+}
+
+@media (max-width: 1024px) {
+  .gig-detail__content {
+    grid-template-columns: 1fr;
+  }
+}

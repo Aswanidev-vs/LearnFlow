@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="LearnFlow - Next-gen Learning Management System">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="clerk-publishable-key" content="pk_test_dG91Y2hlZC1sZW11ci0xNi5jbGVyay5hY2NvdW50cy5kZXYk">
+
+  <title>LearnFlow | Learn. Build. Get Hired.</title>
+
+  <link rel="stylesheet" href="/static/css/bundle.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+
+  <script
+    crossorigin
+    src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+    data-clerk-publishable-key="pk_test_dG91Y2hlZC1sZW11ci0xNi5jbGVyay5hY2NvdW50cy5kZXYk"
+    async
+  ></script>
+
+  <script>
+    window.__lf_errors = [];
+    window.addEventListener('error', function(e) {
+      window.__lf_errors.push(e.message + ' at ' + (e.filename||'').split('/').pop() + ':' + (e.lineno||''));
+      showError();
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      window.__lf_errors.push('Promise: ' + (e.reason?.message || String(e.reason)));
+      showError();
+    });
+    function showError() {
+      var el = document.getElementById('root');
+      if (!el || window.__lf_errors.length === 0) return;
+      el.innerHTML = '<div style="padding:2rem;font-family:monospace;max-width:800px;margin:0 auto;">' +
+        '<h2 style="color:#ef4444;margin-bottom:1rem;">Error loading LearnFlow</h2>' +
+        '<pre style="background:#1e293b;color:#f1f5f9;padding:1rem;border-radius:8px;overflow:auto;white-space:pre-wrap;font-size:13px;">' +
+        window.__lf_errors.join('\n') +
+        '</pre>' +
+        '<p style="margin-top:1rem;color:#64748b;">Check browser console (F12) for details.</p>' +
+        '</div>';
+    }
+  </script>
+</head>
+<body>
+  <div id="root">
+    <div id="lf-spinner" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:1rem;font-family:Inter,-apple-system,sans-serif;">
+      <div style="width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:lf-spin 0.8s linear infinite;"></div>
+      <p style="color:#64748b;font-size:0.875rem;">Loading LearnFlow...</p>
+    </div>
+  </div>
+
+  <style>@keyframes lf-spin { to { transform: rotate(360deg); } }</style>
+
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>
