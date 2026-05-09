@@ -1,6 +1,7 @@
 import { createElement } from '../../utils/dom.js';
 import router from '../../core/router.js';
 import { formatCurrency } from '../../utils/format.js';
+import { icon } from '../../utils/icons.js';
 
 export function renderCourseCard(course) {
   const card = createElement('div', { className: 'course-card' }, [
@@ -47,7 +48,7 @@ export function renderGigCard(gig) {
         createElement('div', { className: 'avatar avatar--sm' }),
         createElement('div', {}, [
           createElement('span', { className: 'gig-card__client-name', textContent: gig.client.name }),
-          gig.client.verified && createElement('span', { className: 'gig-card__verified', textContent: ' ✓ Verified' }),
+          gig.client.verified && createElement('span', { className: 'gig-card__verified', innerHTML: ` ${icon('check')} Verified` }),
         ]),
       ]),
       createElement('span', { className: `gig-card__status gig-card__status--${gig.status}`, textContent: gig.status }),
@@ -70,7 +71,7 @@ export function renderGigCard(gig) {
 
 export function renderStatCard(stat) {
   return createElement('div', { className: 'stat-card' }, [
-    createElement('div', { className: 'stat-card__icon', textContent: stat.icon }),
+    createElement('div', { className: 'stat-card__icon', innerHTML: icon(stat.icon) }),
     createElement('div', { className: 'stat-card__content' }, [
       createElement('span', { className: 'stat-card__value', textContent: stat.value }),
       createElement('span', { className: 'stat-card__label', textContent: stat.label }),
@@ -80,13 +81,13 @@ export function renderStatCard(stat) {
 
 export function renderActivityItem(activity) {
   const icons = {
-    lesson_completed: '✅',
-    certificate_earned: '🏆',
-    assessment_submitted: '📝',
-    course_enrolled: '📚',
+    lesson_completed: 'check',
+    certificate_earned: 'trophy',
+    assessment_submitted: 'pen',
+    course_enrolled: 'books',
   };
   return createElement('div', { className: 'activity-item' }, [
-    createElement('span', { className: 'activity-item__icon', textContent: icons[activity.type] || '📌' }),
+    createElement('span', { className: 'activity-item__icon', innerHTML: icon(icons[activity.type] || 'pin') }),
     createElement('div', { className: 'activity-item__content' }, [
       createElement('p', { className: 'activity-item__title', textContent: activity.title }),
       createElement('span', { className: 'activity-item__time', textContent: formatRelativeTime(activity.timestamp) }),

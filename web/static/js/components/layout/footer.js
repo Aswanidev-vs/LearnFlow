@@ -1,10 +1,11 @@
 import { createElement } from '../../utils/dom.js';
+import { icon } from '../../utils/icons.js';
 
 export function renderFooter(container) {
   const footer = createElement('footer', { className: 'footer' }, [
     createElement('div', { className: 'footer__inner container' }, [
       createElement('div', { className: 'footer__brand' }, [
-        createElement('span', { className: 'footer__logo', textContent: '⚡' }),
+        createElement('span', { className: 'footer__logo', innerHTML: icon('bolt') }),
         createElement('span', { className: 'footer__name', textContent: 'LearnFlow' }),
         createElement('p', { className: 'footer__tagline', textContent: 'Learn. Build. Get Hired.' }),
       ]),

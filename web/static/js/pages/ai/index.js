@@ -3,6 +3,7 @@ import { chatService } from '../../services/index.js';
 import { ChatActions } from '../../store/actions.js';
 import { store } from '../../store/index.js';
 import MockData from '../../services/mockData.js';
+import { icon } from '../../utils/icons.js';
 
 export async function renderAIChatPage(container) {
   clearElement(container);
@@ -20,7 +21,7 @@ function renderChat(container) {
 
   const sidebar = createElement('aside', { className: 'ai-chat__sidebar' }, [
     createElement('div', { className: 'ai-chat__sidebar-header' }, [
-      createElement('h3', { textContent: '🤖 AI Assistant' }),
+      createElement('h3', { innerHTML: `${icon('robot')} AI Assistant` }),
       createElement('button', {
         className: 'btn btn--ghost btn--sm',
         textContent: '+ New Chat',
@@ -37,8 +38,8 @@ function renderChat(container) {
     ]),
     createElement('div', { className: 'ai-chat__sidebar-nav' }, [
       createSidebarItem('💬', 'General Help'),
-      createSidebarItem('📝', 'Code Review'),
-      createSidebarItem('🎯', 'Study Plan'),
+      createSidebarItem(icon('pen'), 'Code Review'),
+      createSidebarItem(icon('target'), 'Study Plan'),
       createSidebarItem('🐛', 'Debug Help'),
       createSidebarItem('💡', 'Concept Explanation'),
     ]),
@@ -131,7 +132,7 @@ function renderMessages(container) {
   messages.forEach((msg) => {
     const isUser = msg.role === 'user';
     const messageEl = createElement('div', { className: `chat-message ${isUser ? 'chat-message--user' : 'chat-message--assistant'}` }, [
-      !isUser && createElement('div', { className: 'chat-message__avatar', textContent: '🤖' }),
+      !isUser && createElement('div', { className: 'chat-message__avatar', innerHTML: icon('robot') }),
       createElement('div', { className: 'chat-message__bubble' }, [
         createElement('div', { className: 'chat-message__content', innerHTML: formatMessageContent(msg.content) }),
         createElement('span', { className: 'chat-message__time', textContent: formatTime(msg.timestamp) }),
@@ -143,7 +144,7 @@ function renderMessages(container) {
   if (isTyping) {
     container.appendChild(
       createElement('div', { className: 'chat-message chat-message--assistant' }, [
-        createElement('div', { className: 'chat-message__avatar', textContent: '🤖' }),
+        createElement('div', { className: 'chat-message__avatar', innerHTML: icon('robot') }),
         createElement('div', { className: 'chat-message__bubble' }, [
           createElement('div', { className: 'typing-indicator' }, [
             createElement('span'),
@@ -170,9 +171,9 @@ function formatTime(timestamp) {
   return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function createSidebarItem(icon, label) {
+function createSidebarItem(iconContent, label) {
   return createElement('button', { className: 'ai-chat__sidebar-item' }, [
-    createElement('span', { textContent: icon }),
+    createElement('span', { innerHTML: iconContent }),
     createElement('span', { textContent: label }),
   ]);
 }

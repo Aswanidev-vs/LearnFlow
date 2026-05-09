@@ -6,6 +6,7 @@ import { renderStatCard, renderActivityItem } from '../../components/ui/cards.js
 import { renderProgressBar, renderSkeleton } from '../../components/ui/forms.js';
 import router from '../../core/router.js';
 import { formatRelativeTime } from '../../utils/format.js';
+import { icon } from '../../utils/icons.js';
 
 export async function renderDashboardPage(container) {
   clearElement(container);
@@ -40,10 +41,10 @@ function renderDashboard(container, data) {
   ]);
 
   const statsGrid = createElement('div', { className: 'dashboard__stats' }, [
-    renderStatCard({ icon: '📚', value: data.stats.enrolledCourses, label: 'Enrolled Courses' }),
-    renderStatCard({ icon: '✅', value: data.stats.completedLessons, label: 'Lessons Completed' }),
-    renderStatCard({ icon: '🏆', value: data.stats.certificates, label: 'Certificates' }),
-    renderStatCard({ icon: '🔥', value: `${data.stats.streak} days`, label: 'Learning Streak' }),
+    renderStatCard({ icon: 'books', value: data.stats.enrolledCourses, label: 'Enrolled Courses' }),
+    renderStatCard({ icon: 'check', value: data.stats.completedLessons, label: 'Lessons Completed' }),
+    renderStatCard({ icon: 'trophy', value: data.stats.certificates, label: 'Certificates' }),
+    renderStatCard({ icon: 'fire', value: `${data.stats.streak} days`, label: 'Learning Streak' }),
   ]);
 
   const content = createElement('div', { className: 'dashboard__content' });
@@ -76,10 +77,10 @@ function renderDashboard(container, data) {
   const quickActions = createElement('div', { className: 'dashboard__section' }, [
     createElement('h2', { className: 'dashboard__section-title', textContent: 'Quick Actions' }),
     createElement('div', { className: 'dashboard__actions-grid' }, [
-      createActionCard('🤖', 'Ask AI Assistant', 'Get help with any topic', '/ai-assistant'),
-      createActionCard('✅', 'View Assessments', 'Check your submissions', '/assessments'),
-      createActionCard('💼', 'Browse Gigs', 'Find freelance work', '/marketplace'),
-      createActionCard('🏆', 'My Certificates', 'View earned certificates', '/certificates'),
+      createActionCard('robot', 'Ask AI Assistant', 'Get help with any topic', '/ai-assistant'),
+      createActionCard('check', 'View Assessments', 'Check your submissions', '/assessments'),
+      createActionCard('briefcase', 'Browse Gigs', 'Find freelance work', '/marketplace'),
+      createActionCard('trophy', 'My Certificates', 'View earned certificates', '/certificates'),
     ]),
   ]);
 
@@ -88,12 +89,12 @@ function renderDashboard(container, data) {
   container.appendChild(page);
 }
 
-function createActionCard(icon, title, description, path) {
+function createActionCard(iconName, title, description, path) {
   return createElement('div', {
     className: 'action-card card',
     onClick: () => router.navigate(path),
   }, [
-    createElement('span', { className: 'action-card__icon', textContent: icon }),
+    createElement('span', { className: 'action-card__icon', innerHTML: icon(iconName) }),
     createElement('h3', { className: 'action-card__title', textContent: title }),
     createElement('p', { className: 'action-card__description', textContent: description }),
   ]);

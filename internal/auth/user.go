@@ -2,7 +2,7 @@ package auth
 
 import "net/http"
 
-func Getuserfromcontext(r *http.Request) (*Userclaims, bool) {
-	claims, ok := r.Context().Value(Usercontextkey).(*Userclaims)
-	return claims, ok
+func GetUserFromContext(r *http.Request) (*Session, bool) {
+	sess, ok := r.Context().Value(SessionCtxKey).(*Session)
+	return sess, ok
 }

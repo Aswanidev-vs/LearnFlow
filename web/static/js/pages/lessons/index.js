@@ -4,7 +4,9 @@ import { CourseActions } from '../../store/actions.js';
 import { store } from '../../store/index.js';
 import { renderProgressBar } from '../../components/ui/forms.js';
 import { throttle } from '../../utils/helpers.js';
+import router from '../../core/router.js';
 import AppConfig from '../../core/config.js';
+import { icon } from '../../utils/icons.js';
 
 export async function renderLessonPage(container, { courseId, lessonId }) {
   clearElement(container);
@@ -19,10 +21,14 @@ export async function renderLessonPage(container, { courseId, lessonId }) {
     }
 
     CourseActions.setCurrentLesson(lesson);
-    renderLesson(container, lesson, course);
+    return renderLesson(container, lesson, course);
   } catch (error) {
     container.innerHTML = '<p class="error-text">Failed to load lesson.</p>';
   }
+}
+
+function navigateTo(path) {
+  router.navigate(path);
 }
 
 function renderLesson(container, lesson, course) {
@@ -40,7 +46,7 @@ function renderLesson(container, lesson, course) {
 
   const sidebar = createElement('aside', { className: 'lesson-viewer__sidebar' }, [
     createElement('div', { className: 'lesson-viewer__course-info' }, [
-      createElement('a', { className: 'lesson-viewer__back', href: `/courses/${cid}`, textContent: '← Back to Course' }),
+      createElement('a', { className: 'lesson-viewer__back', href: `/courses/${cid}`, textContent: '\u2190 Back to Course' }),
       createElement('h3', { className: 'lesson-viewer__course-title', textContent: course.title }),
       renderProgressBar(course.progress),
     ]),
@@ -52,9 +58,9 @@ function renderLesson(container, lesson, course) {
             mod.lessons.map((l) =>
               createElement('li', {
                 className: `lesson-viewer__lesson-link ${l.id === lid ? 'lesson-viewer__lesson-link--active' : ''} ${l.completed ? 'lesson-viewer__lesson-link--completed' : ''}`,
-                onClick: () => window.location.href = `/courses/${cid}/lessons/${l.id}`,
+                onClick: () => navigateTo(`/courses/${cid}/lessons/${l.id}`),
               }, [
-                createElement('span', { textContent: l.completed ? '✓ ' : l.type === 'video' ? '▶ ' : '📄 ' }),
+                createElement('span', { innerHTML: l.completed ? icon('check') + ' ' : l.type === 'video' ? icon('play') + ' ' : icon('file') + ' ' }),
                 createElement('span', { textContent: l.title }),
               ])
             )
@@ -71,7 +77,7 @@ function renderLesson(container, lesson, course) {
       createElement('div', { className: 'lesson-viewer__video' }, [
         createElement('div', { className: 'video-placeholder' }, [
           createElement('div', { className: 'video-placeholder__play' }, [
-            createElement('span', { textContent: '▶' }),
+            createElement('span', { innerHTML: icon('play') }),
           ]),
           createElement('p', { textContent: 'Video Player Placeholder' }),
           createElement('p', { className: 'text-muted', textContent: 'Video streaming will be integrated with the Go backend.' }),
@@ -84,8 +90,8 @@ function renderLesson(container, lesson, course) {
     createElement('h1', { className: 'lesson-viewer__title', textContent: lesson.title }),
     createElement('div', { className: 'lesson-viewer__meta' }, [
       createElement('span', { textContent: lesson.moduleName }),
-      createElement('span', { textContent: `· ${Math.floor(lesson.duration / 60)} min` }),
-      createElement('span', { textContent: lesson.type === 'video' ? '📹 Video' : '📄 Reading' }),
+      createElement('span', { textContent: `\u00B7 ${Math.floor(lesson.duration / 60)} min` }),
+      createElement('span', { innerHTML: lesson.type === 'video' ? icon('video') + ' Video' : icon('file') + ' Reading' }),
     ]),
     lesson.type === 'text' && createElement('div', { className: 'lesson-viewer__body prose' }, [
       createElement('p', { textContent: 'This is the lesson content area. In the full implementation, lesson content will be fetched from the Go backend API and rendered here as structured HTML.' }),
@@ -97,20 +103,20 @@ function renderLesson(container, lesson, course) {
     prevLesson
       ? createElement('button', {
           className: 'btn btn--ghost',
-          textContent: `← ${prevLesson.title}`,
-          onClick: () => window.location.href = `/courses/${cid}/lessons/${prevLesson.id}`,
+          textContent: `\u2190 ${prevLesson.title}`,
+          onClick: () => navigateTo(`/courses/${cid}/lessons/${prevLesson.id}`),
         })
       : createElement('div'),
     nextLesson
       ? createElement('button', {
           className: 'btn btn--primary',
-          textContent: `${nextLesson.title} →`,
-          onClick: () => window.location.href = `/courses/${cid}/lessons/${nextLesson.id}`,
+          textContent: `${nextLesson.title} \u2192`,
+          onClick: () => navigateTo(`/courses/${cid}/lessons/${nextLesson.id}`),
         })
       : createElement('button', {
           className: 'btn btn--primary',
           textContent: 'Complete Course',
-          onClick: () => window.location.href = `/courses/${cid}`,
+          onClick: () => navigateTo(`/courses/${cid}`),
         }),
   ]);
 
@@ -123,4 +129,8 @@ function renderLesson(container, lesson, course) {
   }, AppConfig.VIDEO_RESUME_INTERVAL);
 
   window.addEventListener('scroll', throttledProgress);
+
+  return () => {
+    window.removeEventListener('scroll', throttledProgress);
+  };
 }

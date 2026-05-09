@@ -3,6 +3,7 @@ import authService from '../../services/auth.js';
 import router from '../../core/router.js';
 import { AuthActions, UIActions } from '../../store/actions.js';
 import { createPasswordField, isPasswordValid } from '../../components/ui/password.js';
+import { icon } from '../../utils/icons.js';
 
 function isDemoMode() {
   return !authService.clerk;
@@ -30,14 +31,14 @@ export function renderLoginPage(container) {
   const page = createElement('div', { className: 'auth-page' }, [
     createElement('div', { className: 'auth-page__left' }, [
       createElement('div', { className: 'auth-page__branding' }, [
-        createElement('span', { className: 'auth-page__logo', textContent: '\u26A1' }),
+        createElement('span', { className: 'auth-page__logo', innerHTML: icon('bolt') }),
         createElement('h1', { className: 'auth-page__title', textContent: 'LearnFlow' }),
         createElement('p', { className: 'auth-page__subtitle', textContent: 'Learn. Build. Get Hired.' }),
       ]),
       createElement('div', { className: 'auth-page__features' }, [
-        createFeatureItem('\uD83D\uDCDA', 'Structured Learning', 'Expert-led courses with real-world projects'),
-        createFeatureItem('\uD83E\uDD16', 'AI Assistant', '24/7 personalized learning support'),
-        createFeatureItem('\uD83D\uDCBC', 'Get Hired', 'Earn certifications and find freelance work'),
+        createFeatureItem('books', 'Structured Learning', 'Expert-led courses with real-world projects'),
+        createFeatureItem('robot', 'AI Assistant', '24/7 personalized learning support'),
+        createFeatureItem('briefcase', 'Get Hired', 'Earn certifications and find freelance work'),
       ]),
     ]),
     createElement('div', { className: 'auth-page__right' }, [
@@ -108,6 +109,12 @@ export function renderLoginPage(container) {
 
     try {
       await authService.signIn({ email, password });
+      await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ email, password }),
+      });
       router.navigate('/dashboard');
     } catch (err) {
       UIActions.addToast(err.message || 'Login failed', 'error');
@@ -121,14 +128,14 @@ export function renderSignupPage(container) {
   const page = createElement('div', { className: 'auth-page' }, [
     createElement('div', { className: 'auth-page__left' }, [
       createElement('div', { className: 'auth-page__branding' }, [
-        createElement('span', { className: 'auth-page__logo', textContent: '\u26A1' }),
+        createElement('span', { className: 'auth-page__logo', innerHTML: icon('bolt') }),
         createElement('h1', { className: 'auth-page__title', textContent: 'LearnFlow' }),
         createElement('p', { className: 'auth-page__subtitle', textContent: 'Start your learning journey today' }),
       ]),
       createElement('div', { className: 'auth-page__features' }, [
-        createFeatureItem('\uD83C\uDFAF', 'Structured Path', 'Follow curated learning paths designed by experts'),
-        createFeatureItem('\u2705', 'GitHub Assessments', 'Submit real projects and get AI-powered feedback'),
-        createFeatureItem('\uD83C\uDFC6', 'Dual Certifications', 'Earn course and internship certificates'),
+        createFeatureItem('target', 'Structured Path', 'Follow curated learning paths designed by experts'),
+        createFeatureItem('check', 'GitHub Assessments', 'Submit real projects and get AI-powered feedback'),
+        createFeatureItem('trophy', 'Dual Certifications', 'Earn course and internship certificates'),
       ]),
     ]),
     createElement('div', { className: 'auth-page__right' }, [
@@ -219,14 +226,14 @@ export function renderResetPasswordPage(container) {
   const page = createElement('div', { className: 'auth-page' }, [
     createElement('div', { className: 'auth-page__left' }, [
       createElement('div', { className: 'auth-page__branding' }, [
-        createElement('span', { className: 'auth-page__logo', textContent: '\u26A1' }),
+        createElement('span', { className: 'auth-page__logo', innerHTML: icon('bolt') }),
         createElement('h1', { className: 'auth-page__title', textContent: 'LearnFlow' }),
         createElement('p', { className: 'auth-page__subtitle', textContent: 'Reset your password' }),
       ]),
       createElement('div', { className: 'auth-page__features' }, [
-        createFeatureItem('\uD83D\uDD12', 'Secure Reset', 'We will send a reset link to your email'),
-        createFeatureItem('\u2705', 'Quick Process', 'Get back to learning in minutes'),
-        createFeatureItem('\uD83D\uDEE1\uFE0F', 'Account Protection', 'Your data stays safe throughout'),
+        createFeatureItem('lock', 'Secure Reset', 'We will send a reset link to your email'),
+        createFeatureItem('check', 'Quick Process', 'Get back to learning in minutes'),
+        createFeatureItem('shield', 'Account Protection', 'Your data stays safe throughout'),
       ]),
     ]),
     createElement('div', { className: 'auth-page__right' }, [
@@ -339,7 +346,7 @@ export function renderResetPasswordPage(container) {
     card.innerHTML = '';
     card.append(
       createElement('div', { style: 'text-align:center;margin-bottom:2rem;' }, [
-        createElement('span', { style: 'font-size:3rem;display:block;margin-bottom:1rem;', textContent: '\u2709\uFE0F' }),
+        createElement('span', { style: 'font-size:3rem;display:block;margin-bottom:1rem;', innerHTML: icon('mail') }),
       ]),
       createElement('h2', { className: 'auth-card__title', style: 'text-align:center;', textContent: 'Check Your Email' }),
       createElement('p', { className: 'auth-card__subtitle', style: 'text-align:center;', textContent: `We sent a password reset link to ${email}. Click the link in the email to set a new password.` }),
@@ -358,9 +365,9 @@ export function renderResetPasswordPage(container) {
   renderEmailStep();
 }
 
-function createFeatureItem(icon, title, description) {
+function createFeatureItem(iconName, title, description) {
   return createElement('div', { className: 'auth-feature' }, [
-    createElement('span', { className: 'auth-feature__icon', textContent: icon }),
+    createElement('span', { className: 'auth-feature__icon', innerHTML: icon(iconName) }),
     createElement('div', {}, [
       createElement('h4', { className: 'auth-feature__title', textContent: title }),
       createElement('p', { className: 'auth-feature__description', textContent: description }),

@@ -1,4 +1,5 @@
 import { createElement, clearElement } from '../../utils/dom.js';
+import { icon } from '../../utils/icons.js';
 
 const PASSWORD_RULES = [
   { id: 'minLength', label: 'At least 8 characters', test: (v) => v.length >= 8 },
@@ -56,7 +57,7 @@ function updateChecklist(container, value) {
     }, [
       createElement('span', {
         className: 'password-checklist__icon',
-        textContent: rule.passed ? '\u2713' : '\u25CB',
+        innerHTML: rule.passed ? icon('check') : icon('circle'),
       }),
       createElement('span', {
         className: 'password-checklist__label',

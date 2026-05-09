@@ -4,6 +4,7 @@ import { store } from '../../store/index.js';
 import { UIActions } from '../../store/actions.js';
 import { renderFormField, renderButton } from '../../components/ui/forms.js';
 import { formatDate } from '../../utils/format.js';
+import { icon } from '../../utils/icons.js';
 
 export async function renderProfilePage(container) {
   clearElement(container);
@@ -11,30 +12,64 @@ export async function renderProfilePage(container) {
   try {
     const profile = await profileService.getProfile();
     store.setState('profile.data', profile);
-    renderProfile(container, profile);
+    await renderProfile(container, profile);
   } catch (error) {
     container.innerHTML = '<p class="error-text">Failed to load profile.</p>';
   }
 }
 
-function renderProfile(container, profile) {
+async function renderProfile(container, profile) {
   clearElement(container);
 
   const page = createElement('div', { className: 'profile-page' });
 
+  // Use Clerk avatar if available
+  const { store } = await import('../../store/index.js');
+  const authUser = store.getState('auth.user');
+  const avatarUrl = authUser?.imageUrl;
+
   const header = createElement('div', { className: 'profile-page__header' }, [
-    createElement('div', { className: 'profile-page__cover' }),
+    createElement('div', { 
+      className: 'profile-page__cover',
+      style: profile.bannerColor ? `background: ${profile.bannerColor}` : ''
+    }, [
+      createElement('button', {
+        className: 'btn btn--sm btn--glass profile-page__banner-btn',
+        innerHTML: `${icon('image')} Change Banner`,
+        onClick: () => {
+          const colors = [
+            'linear-gradient(135deg, #6366f1, #06b6d4)',
+            'linear-gradient(135deg, #f43f5e, #fb923c)',
+            'linear-gradient(135deg, #8b5cf6, #d946ef)',
+            'linear-gradient(135deg, #10b981, #3b82f6)',
+            '#1e293b'
+          ];
+          const currentIndex = colors.indexOf(profile.bannerColor || colors[0]);
+          const nextIndex = (currentIndex + 1) % colors.length;
+          profile.bannerColor = colors[nextIndex];
+          store.setState('profile.data', { ...profile });
+          renderProfile(container, profile); // This is fine without await in event handler if we don't care about sync
+        }
+      })
+    ]),
     createElement('div', { className: 'profile-page__info' }, [
       createElement('div', { className: 'profile-page__avatar avatar avatar--xl' }, [
-        createElement('span', { textContent: profile.firstName?.charAt(0) || '?' }),
+        avatarUrl 
+          ? createElement('img', { src: avatarUrl, className: 'avatar__img' })
+          : createElement('span', { textContent: profile.firstName?.charAt(0) || '?' }),
       ]),
       createElement('div', { className: 'profile-page__details' }, [
         createElement('h1', { className: 'profile-page__name', textContent: `${profile.firstName} ${profile.lastName}` }),
         createElement('p', { className: 'profile-page__bio', textContent: profile.bio }),
         createElement('div', { className: 'profile-page__meta' }, [
-          createElement('span', { textContent: `📍 ${profile.location}` }),
-          createElement('span', { textContent: `📅 Joined ${formatDate(profile.joinedAt)}` }),
-          profile.github && createElement('a', { href: profile.social.github, target: '_blank', textContent: `🐙 @${profile.github}` }),
+          createElement('span', { innerHTML: `${icon('mapPin')} ${profile.location}` }),
+          createElement('span', { innerHTML: `${icon('calendar')} Joined ${formatDate(profile.joinedAt)}` }),
+          profile.github && createElement('a', { 
+            href: `https://github.com/${profile.github}`, 
+            target: '_blank', 
+            className: 'profile-page__meta-link',
+            innerHTML: `${icon('github')} @${profile.github}` 
+          }),
         ]),
       ]),
       createElement('button', {
@@ -58,18 +93,18 @@ function renderProfile(container, profile) {
     createElement('h2', { textContent: 'Links' }),
     createElement('div', { className: 'profile-page__links' }, [
       profile.website && createElement('a', { className: 'profile-page__link', href: profile.website, target: '_blank', textContent: `🌐 ${profile.website}` }),
-      profile.social.github && createElement('a', { className: 'profile-page__link', href: profile.social.github, target: '_blank', textContent: `🐙 GitHub` }),
-      profile.social.linkedin && createElement('a', { className: 'profile-page__link', href: profile.social.linkedin, target: '_blank', textContent: `💼 LinkedIn` }),
+      profile.social.github && createElement('a', { className: 'profile-page__link', href: profile.social.github, target: '_blank', innerHTML: `${icon('github')} GitHub` }),
+      profile.social.linkedin && createElement('a', { className: 'profile-page__link', href: profile.social.linkedin, target: '_blank', innerHTML: `${icon('briefcase')} LinkedIn` }),
     ]),
   ]);
 
   const statsSection = createElement('div', { className: 'profile-page__section card' }, [
     createElement('h2', { textContent: 'Stats' }),
     createElement('div', { className: 'profile-page__stats' }, [
-      createProfileStat('📚', '3', 'Courses Enrolled'),
-      createProfileStat('✅', '24', 'Lessons Completed'),
-      createProfileStat('🏆', '1', 'Certificates'),
-      createProfileStat('💼', '0', 'Gigs Completed'),
+      createProfileStat('books', '3', 'Courses Enrolled'),
+      createProfileStat('check', '24', 'Lessons Completed'),
+      createProfileStat('trophy', '1', 'Certificates'),
+      createProfileStat('briefcase', '0', 'Gigs Completed'),
     ]),
   ]);
 
@@ -143,9 +178,9 @@ function renderProfileEdit(container, profile) {
   });
 }
 
-function createProfileStat(icon, value, label) {
+function createProfileStat(iconName, value, label) {
   return createElement('div', { className: 'profile-stat' }, [
-    createElement('span', { className: 'profile-stat__icon', textContent: icon }),
+    createElement('span', { className: 'profile-stat__icon', innerHTML: icon(iconName) }),
     createElement('span', { className: 'profile-stat__value', textContent: value }),
     createElement('span', { className: 'profile-stat__label', textContent: label }),
   ]);

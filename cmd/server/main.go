@@ -1,54 +1,100 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
+	"github.com/Aswanidev-vs/learnflow/internal/auth"
+	"github.com/Aswanidev-vs/learnflow/internal/db"
 	"github.com/Aswanidev-vs/learnflow/internal/handler"
+	"github.com/Aswanidev-vs/learnflow/internal/middleware"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
+	chimw "github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
+	rootDir := findProjectRoot()
+	ctx := context.Background()
+
+	database, err := db.NewFromEnv(ctx, rootDir)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer database.Close()
+
+	sessionSecret := os.Getenv("SESSION_SECRET")
+	if sessionSecret == "" {
+		sessionSecret = "dev-session-secret-change-in-prod"
+		log.Printf("[WARN] Using default session secret. Set SESSION_SECRET env var in production.")
+	}
+
+	sessions := auth.NewSessionStore(sessionSecret)
+	authHandler := handler.NewAuthHandler(sessions)
+	rateLimiter := middleware.NewRateLimiterFromEnv()
+	validator := middleware.NewValidatorFromEnv()
+	corsConfig := middleware.NewCORSFromEnv()
+
 	r := chi.NewRouter()
 
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Compress(5))
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
+	r.Use(chimw.Logger)
+	r.Use(chimw.Recoverer)
+	r.Use(chimw.Compress(5))
+	r.Use(validator.RequestID)
+	r.Use(validator.SecurityHeaders)
+	r.Use(corsConfig.Middleware)
+	r.Use(validator.LimitBody)
+	r.Use(sessions.Middleware)
 
-	rootDir := findProjectRoot()
 	staticDir := filepath.Join(rootDir, "web", "static")
 	indexFile := filepath.Join(rootDir, "index.html")
 
-	log.Printf("[DEBUG] rootDir=%s", rootDir)
-	log.Printf("[DEBUG] indexFile=%s exists=%v", indexFile, fileExists(indexFile))
-	log.Printf("[DEBUG] staticDir=%s exists=%v", staticDir, fileExists(staticDir))
-
 	r.Route("/auth", func(r chi.Router) {
-		r.Post("/signup", handler.Signuphandler)
-		r.Post("/login", handler.LoginHandler)
+		r.Use(rateLimiter.Middleware)
+		r.Use(validator.ValidateJSON)
+		r.Post("/login", authHandler.Login)
+		r.Post("/logout", authHandler.Logout)
+		r.Get("/me", authHandler.Me)
+		r.Post("/signup", authHandler.Signup)
 		r.Post("/reset-password", handler.ResetPasswordHandler)
 		r.Post("/reset-password/confirm", handler.ResetPasswordConfirmHandler)
 	})
 
-	r.Get("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status":"ok","service":"learnflow"}`))
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Use(rateLimiter.Middleware)
+		r.Use(validator.ValidateJSON)
+
+		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+			if err := database.Ping(r.Context()); err != nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusServiceUnavailable)
+				w.Write([]byte(`{"status":"unhealthy","database":"` + err.Error() + `"}`))
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"status":"ok","service":"learnflow","database":"healthy"}`))
+		})
+
+		r.Group(func(r chi.Router) {
+			r.Use(sessions.RequireAuth)
+
+			r.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
+				sess := auth.GetSession(r)
+				w.Header().Set("Content-Type", "application/json")
+				w.Write([]byte(`{"message":"Welcome ` + sess.Email + `","role":"` + sess.Role + `"}`))
+			})
+		})
+
+		r.Get("/certificates/{id}/download", handler.DownloadCertificate)
 	})
 
-	FileServer(r, "/static", http.Dir(staticDir))
+	fileServer(r, "/static", http.Dir(staticDir))
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, indexFile)
@@ -69,8 +115,33 @@ func main() {
 		port = "3000"
 	}
 
-	log.Printf("LearnFlow server starting on http://localhost:%s", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	srv := &http.Server{
+		Addr:         ":" + port,
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	go func() {
+		log.Printf("LearnFlow server starting on http://localhost:%s", port)
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Printf("[SERVER] Shutting down gracefully...")
+	shutdownCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Fatalf("Forced shutdown: %v", err)
+	}
+	log.Printf("[SERVER] Stopped")
 }
 
 func findProjectRoot() string {
@@ -95,11 +166,7 @@ func fileExists(path string) bool {
 	return err == nil
 }
 
-func FileServer(r chi.Router, path string, root http.FileSystem) {
-	if strings.ContainsAny("{}*", path) {
-		panic("FileServer does not permit URL parameters.")
-	}
-
+func fileServer(r chi.Router, path string, root http.FileSystem) {
 	if path != "/" && path[len(path)-1] != '/' {
 		r.Get(path, http.RedirectHandler(path+"/", 301).ServeHTTP)
 		path += "/"
@@ -109,6 +176,9 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 	r.Get(path, func(w http.ResponseWriter, r *http.Request) {
 		rctx := chi.RouteContext(r.Context())
 		pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
+		if strings.HasSuffix(r.URL.Path, ".js") || strings.HasSuffix(r.URL.Path, ".css") {
+			w.Header().Set("Cache-Control", "no-cache, must-revalidate")
+		}
 		fs := http.StripPrefix(pathPrefix, http.FileServer(root))
 		fs.ServeHTTP(w, r)
 	})

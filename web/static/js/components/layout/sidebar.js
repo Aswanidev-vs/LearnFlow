@@ -2,15 +2,16 @@ import { createElement, show, hide } from '../../utils/dom.js';
 import { store } from '../../store/index.js';
 import { UIActions } from '../../store/actions.js';
 import router from '../../core/router.js';
+import { icon } from '../../utils/icons.js';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', icon: '📊', path: '/dashboard' },
-  { label: 'Courses', icon: '📚', path: '/courses' },
-  { label: 'Assessments', icon: '✅', path: '/assessments' },
-  { label: 'AI Assistant', icon: '🤖', path: '/ai-assistant' },
-  { label: 'Marketplace', icon: '💼', path: '/marketplace' },
-  { label: 'Certificates', icon: '🏆', path: '/certificates' },
-  { label: 'Profile', icon: '👤', path: '/profile' },
+  { label: 'Dashboard', icon: 'chart', path: '/dashboard' },
+  { label: 'Courses', icon: 'books', path: '/courses' },
+  { label: 'Assessments', icon: 'check', path: '/assessments' },
+  { label: 'AI Assistant', icon: 'robot', path: '/ai-assistant' },
+  { label: 'Marketplace', icon: 'briefcase', path: '/marketplace' },
+  { label: 'Certificates', icon: 'trophy', path: '/certificates' },
+  { label: 'Profile', icon: 'user', path: '/profile' },
 ];
 
 export function renderSidebar(container) {
@@ -29,7 +30,7 @@ export function renderSidebar(container) {
                 if (window.innerWidth < 768) UIActions.toggleSidebar(false);
               },
             }, [
-              createElement('span', { className: 'sidebar__icon', textContent: item.icon }),
+              createElement('span', { className: 'sidebar__icon', innerHTML: icon(item.icon) }),
               createElement('span', { className: 'sidebar__label', textContent: item.label }),
             ]),
           ])
@@ -45,7 +46,7 @@ export function renderSidebar(container) {
           router.navigate('/login');
         },
       }, [
-        createElement('span', { className: 'sidebar__icon', textContent: '🚪' }),
+        createElement('span', { className: 'sidebar__icon', innerHTML: icon('logout') }),
         createElement('span', { className: 'sidebar__label', textContent: 'Sign Out' }),
       ]),
     ]),

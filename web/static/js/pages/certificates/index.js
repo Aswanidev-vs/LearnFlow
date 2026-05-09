@@ -3,6 +3,7 @@ import { certificateService } from '../../services/index.js';
 import { store } from '../../store/index.js';
 import { renderEmptyState } from '../../components/ui/loading.js';
 import { formatDate } from '../../utils/format.js';
+import { icon } from '../../utils/icons.js';
 
 export async function renderCertificatesPage(container) {
   clearElement(container);
@@ -29,13 +30,25 @@ function renderCertificates(container, certificates) {
   const list = createElement('div', { className: 'certificates-page__list' });
 
   if (certificates.length === 0) {
-    list.appendChild(renderEmptyState("You haven't earned any certificates yet. Complete a course and pass the assessment to earn your first!", '🏆'));
+    list.appendChild(renderEmptyState("You haven't earned any certificates yet. Complete a course and pass the assessment to earn your first!", 'trophy'));
   } else {
     certificates.forEach((cert) => list.appendChild(renderCertificateCard(cert)));
   }
 
   page.append(header, list);
   container.appendChild(page);
+}
+
+function getCertUrl(cert) {
+  const user = store.getState('auth.user') || {};
+  const params = new URLSearchParams({
+    name: user.fullName || user.email || 'Student',
+    course: cert.courseName,
+    score: String(cert.score),
+    id: cert.credentialId,
+    type: cert.type,
+  });
+  return `/api/v1/certificates/${cert.id}/download?${params}`;
 }
 
 function renderCertificateCard(cert) {
@@ -46,7 +59,7 @@ function renderCertificateCard(cert) {
 
   return createElement('div', { className: 'certificate-card card' }, [
     createElement('div', { className: 'certificate-card__badge' }, [
-      createElement('div', { className: 'certificate-card__icon', textContent: '🏆' }),
+      createElement('div', { className: 'certificate-card__icon', innerHTML: icon('trophy') }),
       createElement('span', { className: `badge badge--${cert.type === 'course' ? 'success' : 'info'}`, textContent: typeLabels[cert.type] || cert.type }),
     ]),
     createElement('div', { className: 'certificate-card__content' }, [
@@ -68,10 +81,39 @@ function renderCertificateCard(cert) {
     ]),
     createElement('div', { className: 'certificate-card__actions' }, [
       createElement('button', {
+        className: 'btn btn--outline',
+        textContent: 'Preview',
+        onClick: () => {
+          const url = getCertUrl(cert);
+          window.open(url, '_blank');
+        },
+      }),
+      createElement('button', {
         className: 'btn btn--primary',
         textContent: 'Download PDF',
-        onClick: () => {
-          window.open(cert.downloadUrl, '_blank');
+        onClick: async (e) => {
+          const btn = e.currentTarget;
+          const originalText = btn.textContent;
+          btn.textContent = 'Generating...';
+          btn.disabled = true;
+          try {
+            const res = await fetch(getCertUrl(cert), { credentials: 'same-origin' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `certificate_${cert.credentialId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(url);
+            a.remove();
+          } catch (err) {
+            console.error('PDF download error:', err);
+          } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+          }
         },
       }),
       createElement('button', {

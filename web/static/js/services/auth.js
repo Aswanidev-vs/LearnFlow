@@ -7,6 +7,7 @@ class AuthService {
     this.clerk = null;
     this.isInitialized = false;
     this.initPromise = null;
+    this.oauthReturnToKey = 'lf_oauth_return_to';
   }
 
   async init() {
@@ -19,6 +20,7 @@ class AuthService {
     if (this.isInitialized) return;
 
     const key = AppConfig.CLERK_PUBLISHABLE_KEY;
+    const origin = window.location.origin;
     if (!key || key === 'pk_test_placeholder') {
       console.warn('[AuthService] No Clerk key. Running in demo mode.');
       AuthActions.setLoading(false);
@@ -34,7 +36,17 @@ class AuthService {
         throw new Error('Clerk SDK not available');
       }
 
-      await this.clerk.load({ publishableKey: key });
+      if (!this.clerk.loaded) {
+        await this.clerk.load({
+          signInUrl: `${origin}/login`,
+          signUpUrl: `${origin}/signup`,
+          signInForceRedirectUrl: `${origin}/dashboard`,
+          signUpForceRedirectUrl: `${origin}/dashboard`,
+          signInFallbackRedirectUrl: `${origin}/dashboard`,
+          signUpFallbackRedirectUrl: `${origin}/dashboard`,
+          afterSignOutUrl: `${origin}/login`,
+        });
+      }
 
       this.clerk.addListener(({ user }) => {
         if (user) {
@@ -80,7 +92,14 @@ class AuthService {
 
   async _syncUser(clerkUser) {
     try {
-      const token = await clerkUser.getToken();
+      // In newer Clerk versions, getToken is on the session or called differently
+      let token = null;
+      if (typeof clerkUser.getToken === 'function') {
+        token = await clerkUser.getToken();
+      } else if (this.clerk.session && typeof this.clerk.session.getToken === 'function') {
+        token = await this.clerk.session.getToken();
+      }
+      
       const user = {
         id: clerkUser.id,
         email: clerkUser.primaryEmailAddress?.emailAddress,
@@ -174,11 +193,29 @@ class AuthService {
 
   async signInWithOAuth(provider = 'github') {
     if (this.clerk) {
-      await this.clerk.client.signIn.authenticateWithRedirect({
-        strategy: `oauth_${provider}`,
-        redirectUrl: '/login/sso-callback',
-        redirectUrlComplete: '/dashboard',
-      });
+      // If already signed in, just go to dashboard
+      if (this.clerk.user) {
+        import('../core/router.js').then(m => m.router.navigate('/dashboard'));
+        return;
+      }
+
+      const origin = window.location.origin;
+      const returnTo = '/dashboard';
+      sessionStorage.setItem(this.oauthReturnToKey, returnTo);
+      
+      try {
+        await this.clerk.client.signIn.authenticateWithRedirect({
+          strategy: `oauth_${provider}`,
+          redirectUrl: `${origin}/login/sso-callback`,
+          redirectUrlComplete: `${origin}/login/sso-callback?returnTo=${encodeURIComponent(returnTo)}`,
+        });
+      } catch (err) {
+        if (err.message?.includes('already signed in')) {
+          import('../core/router.js').then(m => m.router.navigate('/dashboard'));
+        } else {
+          throw err;
+        }
+      }
       return;
     }
 
@@ -190,6 +227,27 @@ class AuthService {
       fullName: `${provider} User`,
     });
     AuthActions.setToken('oauth-token');
+  }
+
+  async handleRedirectCallback() {
+    if (!this.clerk) return { success: false };
+    try {
+      await this.clerk.handleRedirectCallback();
+      if (this.clerk.user) {
+        await this._syncUser(this.clerk.user);
+      }
+      const storedReturnTo = sessionStorage.getItem(this.oauthReturnToKey);
+      if (storedReturnTo) {
+        sessionStorage.removeItem(this.oauthReturnToKey);
+      }
+      return { success: true, returnTo: storedReturnTo || '/dashboard' };
+    } catch (err) {
+      if (err.message?.includes('already signed in') || this.clerk.user) {
+        return { success: true, returnTo: '/dashboard' };
+      }
+      console.warn('[AuthService] handleRedirectCallback failed:', err.message);
+      return { success: false, error: err.message };
+    }
   }
 
   async signOut() {

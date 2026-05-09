@@ -6,6 +6,7 @@ import { renderCourseCard } from '../../components/ui/cards.js';
 import { renderSkeleton, renderPagination } from '../../components/ui/forms.js';
 import { renderEmptyState } from '../../components/ui/loading.js';
 import { debounce } from '../../utils/helpers.js';
+import { icon } from '../../utils/icons.js';
 
 export async function renderCoursesPage(container) {
   clearElement(container);
@@ -67,7 +68,7 @@ function renderCourses(container, courses, pagination) {
   const paginationEl = renderPagination({
     page: pagination.page,
     totalPages: pagination.totalPages,
-    onPageChange: (newPage) => handleFilterChange(container),
+    onPageChange: () => handleFilter(),
   });
 
   page.append(header, filters, grid, paginationEl);
@@ -112,7 +113,7 @@ export async function renderCourseDetailPage(container, courseId) {
   try {
     const course = await courseService.getCourseById(courseId);
     if (!course) {
-      container.appendChild(renderEmptyState('Course not found.', '🔍'));
+      container.appendChild(renderEmptyState('Course not found.', 'search'));
       return;
     }
     CourseActions.setCurrentCourse(course);
@@ -226,7 +227,7 @@ function renderCourseDetail(container, course) {
                   }
                 },
               }, [
-                createElement('span', { className: 'lesson-item__icon', textContent: lesson.completed ? '✓' : lesson.type === 'video' ? '▶' : '📄' }),
+                createElement('span', { className: 'lesson-item__icon', innerHTML: lesson.completed ? icon('check') : lesson.type === 'video' ? icon('play') : icon('file') }),
                 createElement('span', { className: 'lesson-item__title', textContent: lesson.title }),
                 createElement('span', { className: 'lesson-item__duration', textContent: formatLessonDuration(lesson.duration) }),
               ])

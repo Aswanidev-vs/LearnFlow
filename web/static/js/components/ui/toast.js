@@ -1,6 +1,7 @@
 import { createElement } from '../../utils/dom.js';
 import { store } from '../../store/index.js';
 import { UIActions } from '../../store/actions.js';
+import { icon } from '../../utils/icons.js';
 
 export function renderToastContainer(root) {
   const container = createElement('div', { className: 'toast-container', id: 'toast-container' });
@@ -20,7 +21,7 @@ function renderToasts(container, toasts) {
       className: `toast toast--${toast.type}`,
       dataset: { id: toast.id },
     }, [
-      createElement('span', { className: 'toast__icon', textContent: getToastIcon(toast.type) }),
+      createElement('span', { className: 'toast__icon', innerHTML: getToastIcon(toast.type) }),
       createElement('span', { className: 'toast__message', textContent: toast.message }),
       createElement('button', {
         className: 'toast__close',
@@ -34,6 +35,6 @@ function renderToasts(container, toasts) {
 }
 
 function getToastIcon(type) {
-  const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+  const icons = { success: icon('check'), error: icon('alert'), warning: icon('alert'), info: icon('info') };
   return icons[type] || icons.info;
 }

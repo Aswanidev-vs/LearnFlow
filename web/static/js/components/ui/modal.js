@@ -65,30 +65,28 @@ function renderModalContent(container, { id, data }) {
 
 function createProposalModal(data) {
   const form = createElement('form', { className: 'modal__form' });
-  form.innerHTML = `
-    <div class="modal__body">
-      <h3 class="modal__title">Submit Proposal</h3>
-      <p class="modal__subtitle">${data?.gigTitle || ''}</p>
-      <div class="form-group">
-        <label class="form-label" for="proposal-cover">Cover Letter</label>
-        <textarea class="form-textarea" id="proposal-cover" rows="5" placeholder="Explain why you're a great fit..."></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="proposal-rate">Your Rate ($)</label>
-        <input class="form-input" type="number" id="proposal-rate" placeholder="Enter your rate" />
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="proposal-timeline">Estimated Timeline</label>
-        <input class="form-input" type="text" id="proposal-timeline" placeholder="e.g., 2 weeks" />
-      </div>
-    </div>
-    <div class="modal__footer">
-      <button type="button" class="btn btn--ghost" id="proposal-cancel">Cancel</button>
-      <button type="submit" class="btn btn--primary">Submit Proposal</button>
-    </div>
-  `;
+  const body = createElement('div', { className: 'modal__body' }, [
+    createElement('h3', { className: 'modal__title', textContent: 'Submit Proposal' }),
+    createElement('p', { className: 'modal__subtitle', textContent: data?.gigTitle || '' }),
+    createElement('div', { className: 'form-group' }, [
+      createElement('label', { className: 'form-label', for: 'proposal-cover', textContent: 'Cover Letter' }),
+      createElement('textarea', { className: 'form-textarea', id: 'proposal-cover', rows: '5', placeholder: "Explain why you're a great fit..." }),
+    ]),
+    createElement('div', { className: 'form-group' }, [
+      createElement('label', { className: 'form-label', for: 'proposal-rate', textContent: 'Your Rate ($)' }),
+      createElement('input', { className: 'form-input', type: 'number', id: 'proposal-rate', placeholder: 'Enter your rate' }),
+    ]),
+    createElement('div', { className: 'form-group' }, [
+      createElement('label', { className: 'form-label', for: 'proposal-timeline', textContent: 'Estimated Timeline' }),
+      createElement('input', { className: 'form-input', type: 'text', id: 'proposal-timeline', placeholder: 'e.g., 2 weeks' }),
+    ]),
+  ]);
+  const footer = createElement('div', { className: 'modal__footer' }, [
+    createElement('button', { className: 'btn btn--ghost', type: 'button', textContent: 'Cancel', onClick: () => UIActions.closeModal() }),
+    createElement('button', { className: 'btn btn--primary', type: 'submit', textContent: 'Submit Proposal' }),
+  ]);
+  form.append(body, footer);
 
-  form.querySelector('#proposal-cancel').addEventListener('click', () => UIActions.closeModal());
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const cover = form.querySelector('#proposal-cover').value;

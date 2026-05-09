@@ -9,6 +9,7 @@ import { openProposalModal } from '../../components/ui/modal.js';
 import { UIActions } from '../../store/actions.js';
 import { formatCurrency, formatDate, formatRelativeTime } from '../../utils/format.js';
 import { debounce } from '../../utils/helpers.js';
+import { icon } from '../../utils/icons.js';
 
 export async function renderMarketplacePage(container) {
   clearElement(container);
@@ -53,7 +54,7 @@ function renderMarketplace(container, gigs, pagination) {
   const gigList = createElement('div', { className: 'marketplace-page__list' });
 
   if (gigs.length === 0) {
-    gigList.appendChild(renderEmptyState('No gigs available matching your criteria.', '💼'));
+    gigList.appendChild(renderEmptyState('No gigs available matching your criteria.', 'briefcase'));
   } else {
     gigs.forEach((gig) => gigList.appendChild(renderGigCard(gig)));
   }
@@ -70,7 +71,7 @@ function renderMarketplace(container, gigs, pagination) {
       const { gigs: filtered } = await marketplaceService.getGigs({ search });
       gigList.innerHTML = '';
       if (filtered.length === 0) {
-        gigList.appendChild(renderEmptyState('No gigs found.', '💼'));
+        gigList.appendChild(renderEmptyState('No gigs found.', 'briefcase'));
       } else {
         filtered.forEach((g) => gigList.appendChild(renderGigCard(g)));
       }
@@ -89,7 +90,7 @@ export async function renderGigDetailPage(container, gigId) {
   try {
     const gig = await marketplaceService.getGigById(gigId);
     if (!gig) {
-      container.appendChild(renderEmptyState('Gig not found.', '🔍'));
+      container.appendChild(renderEmptyState('Gig not found.', 'search'));
       return;
     }
     MarketplaceActions.setCurrentGig(gig);
@@ -117,7 +118,7 @@ function renderGigDetail(container, gig) {
             createElement('div', { className: 'avatar avatar--lg' }),
             createElement('div', {}, [
               createElement('h3', { textContent: gig.client.name }),
-              gig.client.verified && createElement('span', { className: 'badge badge--success', textContent: '✓ Verified Client' }),
+              gig.client.verified && createElement('span', { className: 'badge badge--success', innerHTML: `${icon('check')} Verified Client` }),
             ]),
           ]),
         ]),

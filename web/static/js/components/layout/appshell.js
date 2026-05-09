@@ -16,9 +16,9 @@ export function renderAppShell(root) {
   renderNavbar(mainLayout);
   renderSidebar(mainLayout);
   mainContent.appendChild(pageContainer);
+  renderFooter(mainContent);
   mainLayout.appendChild(mainContent);
   appShell.appendChild(mainLayout);
-  renderFooter(appShell);
   renderToastContainer(appShell);
 
   root.appendChild(appShell);
@@ -35,6 +35,7 @@ export function renderPublicShell(root) {
   const pageContainer = createElement('div', { className: 'page-container', id: 'page-container' });
 
   content.appendChild(pageContainer);
+  renderFooter(content);
   shell.appendChild(content);
   renderToastContainer(shell);
 

@@ -2,6 +2,7 @@ import { createElement } from '../../utils/dom.js';
 import { store } from '../../store/index.js';
 import { UIActions } from '../../store/actions.js';
 import AppConfig from '../../core/config.js';
+import { icon } from '../../utils/icons.js';
 
 export function renderNavbar(container) {
   const navbar = createElement('nav', { className: 'navbar' }, [
@@ -12,16 +13,13 @@ export function renderNavbar(container) {
         onClick: () => UIActions.toggleSidebar(),
       }),
       createElement('a', { className: 'navbar__brand', href: '/' }, [
-        createElement('span', { className: 'navbar__logo', textContent: '⚡' }),
+        createElement('span', { className: 'navbar__logo', innerHTML: icon('bolt') }),
         createElement('span', { className: 'navbar__name', textContent: AppConfig.APP_NAME }),
       ]),
     ]),
     createElement('div', { className: 'navbar__center' }, [
       createElement('div', { className: 'navbar__search' }, [
-        createElement('svg', {
-          className: 'navbar__search-icon',
-          innerHTML: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
-        }),
+        (() => { const s = document.createElement('span'); s.className = 'navbar__search-icon'; s.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'; return s; })(),
         createElement('input', {
           className: 'navbar__search-input',
           type: 'text',

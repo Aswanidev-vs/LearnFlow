@@ -20,6 +20,7 @@ class ApiService {
     const config = {
       method,
       headers: { ...defaultHeaders, ...headers },
+      credentials: 'same-origin',
     };
 
     if (body && method !== 'GET') {

@@ -5,6 +5,7 @@ import authService from './services/auth.js';
 import { renderAppShell, renderPublicShell, switchToAppShell, switchToPublicShell } from './components/layout/appshell.js';
 import { renderModal } from './components/ui/modal.js';
 import { highlightActiveLink } from './components/layout/sidebar.js';
+import { icon } from './utils/icons.js';
 
 import { renderLandingPage } from './pages/landing/index.js';
 import { renderLoginPage, renderSignupPage } from './components/auth/authPages.js';
@@ -70,8 +71,28 @@ async function authMiddleware(ctx, route) {
       router.navigate('/login', { replace: true });
       return false;
     }
+  } else if (route.pattern === '/login' || route.pattern === '/signup') {
+    if (store.getState('auth.isAuthenticated')) {
+      router.navigate('/dashboard', { replace: true });
+      return false;
+    }
   }
   return true;
+}
+
+async function syncBackendSession() {
+  try {
+    const user = authService.getUser();
+    if (!user?.email) return;
+    await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ email: user.email, password: 'oauth-session-sync' }),
+    });
+  } catch (e) {
+    console.warn('[LF] Backend session sync failed:', e.message);
+  }
 }
 
 function createRouteHandler(renderFn, layoutType) {
@@ -105,6 +126,23 @@ function initRouter() {
   router.register('/login', {
     handler: createRouteHandler((c) => renderLoginPage(c), 'public'),
     title: 'Sign In',
+    layout: 'public',
+  });
+
+  router.register('/login/sso-callback', {
+    handler: createRouteHandler(async (c, ctx) => {
+      await authService.init();
+      
+      const result = await authService.handleRedirectCallback();
+      if (result.success) {
+        await syncBackendSession();
+        router.navigate('/dashboard', { replace: true });
+      } else {
+        console.error('[OAuth] Callback failed:', result.error);
+        router.navigate('/login', { replace: true });
+      }
+    }, 'public'),
+    title: 'Signing In...',
     layout: 'public',
   });
 
@@ -178,7 +216,7 @@ function initRouter() {
     handler: createRouteHandler((c) => {
       c.innerHTML = `
         <div class="empty-state">
-          <span class="empty-state__icon">🔍</span>
+          <span class="empty-state__icon">${icon('search')}</span>
           <p class="empty-state__message">Page not found</p>
           <a href="/" class="btn btn--primary" style="margin-top: 1rem;">Go Home</a>
         </div>

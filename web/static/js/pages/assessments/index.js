@@ -7,6 +7,7 @@ import { renderEmptyState } from '../../components/ui/loading.js';
 import { formatDate } from '../../utils/format.js';
 import { UIActions } from '../../store/actions.js';
 import AppConfig from '../../core/config.js';
+import { icon } from '../../utils/icons.js';
 
 export async function renderAssessmentsPage(container) {
   clearElement(container);
@@ -33,7 +34,7 @@ function renderAssessments(container, assessments) {
   const list = createElement('div', { className: 'assessments-page__list' });
 
   if (assessments.length === 0) {
-    list.appendChild(renderEmptyState('No assessments available yet.', '📝'));
+    list.appendChild(renderEmptyState('No assessments available yet.', 'pen'));
   } else {
     assessments.forEach((assessment) => list.appendChild(renderAssessmentCard(assessment)));
   }
@@ -75,7 +76,7 @@ function renderAssessmentCard(assessment) {
       ]),
       assessment.score !== null && createElement('div', { className: `assessment-card__score ${assessment.score >= AppConfig.ASSESSMENT_PASS_SCORE ? 'assessment-card__score--pass' : 'assessment-card__score--fail'}` }, [
         createElement('span', { className: 'assessment-card__score-value', textContent: `${assessment.score}/100` }),
-        createElement('span', { textContent: assessment.score >= AppConfig.ASSESSMENT_PASS_SCORE ? '✓ Passed' : '✕ Failed' }),
+        createElement('span', { innerHTML: assessment.score >= AppConfig.ASSESSMENT_PASS_SCORE ? `${icon('check')} Passed` : '✕ Failed' }),
       ]),
     ]),
     assessment.status === 'not_submitted' && renderSubmissionForm(assessment),

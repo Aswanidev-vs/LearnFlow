@@ -1,6 +1,7 @@
 import api from './api.js';
 import MockData from './mockData.js';
 import { sleep } from '../utils/helpers.js';
+import { store } from '../store/index.js';
 
 const USE_MOCK = true;
 
@@ -169,32 +170,28 @@ class CertificateService {
     }
     return api.get('/certificates');
   }
-
-  async downloadCertificate(certificateId) {
-    if (USE_MOCK) {
-      return '#';
-    }
-    return api.get(`/certificates/${certificateId}/download`);
-  }
 }
 
 class ProfileService {
   async getProfile() {
     if (USE_MOCK) {
       await sleep(300);
+      const { store } = await import('../store/index.js');
+      const authUser = store.getState('auth.user');
+      
       return {
-        id: 'user-1',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
+        id: authUser?.id || 'user-1',
+        firstName: authUser?.firstName || 'John',
+        lastName: authUser?.lastName || 'Doe',
+        email: authUser?.email || 'john.doe@example.com',
         bio: 'Full-stack developer passionate about learning new technologies.',
         location: 'San Francisco, CA',
         website: 'https://johndoe.dev',
-        github: 'johndoe',
+        github: authUser?.firstName?.toLowerCase() || 'johndoe',
         skills: ['Go', 'React', 'TypeScript', 'PostgreSQL', 'Docker'],
         role: 'student',
-        joinedAt: '2026-01-15',
-        social: { github: 'https://github.com/johndoe', linkedin: 'https://linkedin.com/in/johndoe' },
+        joinedAt: authUser?.createdAt || '2026-01-15',
+        social: { github: `https://github.com/${authUser?.firstName?.toLowerCase() || 'johndoe'}`, linkedin: 'https://linkedin.com/in/johndoe' },
       };
     }
     return api.get('/profile');
