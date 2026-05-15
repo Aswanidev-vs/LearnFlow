@@ -84,8 +84,16 @@ function renderCertificateCard(cert) {
         className: 'btn btn--outline',
         textContent: 'Preview',
         onClick: () => {
-          const url = getCertUrl(cert);
-          window.open(url, '_blank');
+          const url = new URL(getCertUrl(cert), window.location.origin);
+          url.searchParams.set('preview', '1');
+
+          const a = document.createElement('a');
+          a.href = url.toString();
+          a.target = '_blank';
+          a.rel = 'noopener';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
         },
       }),
       createElement('button', {

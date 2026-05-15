@@ -50,7 +50,15 @@ func DownloadCertificate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=certificate_%s.pdf", credentialID))
+
+	// Preview should render in-browser; download should force “Save as”.
+	// Frontend passes ?preview=1 for preview.
+	disposition := "attachment"
+	if r.URL.Query().Get("preview") == "1" {
+		disposition = "inline"
+	}
+
+	w.Header().Set("Content-Disposition", fmt.Sprintf("%s; filename=certificate_%s.pdf", disposition, credentialID))
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(pdfBytes)))
 	w.Write(pdfBytes)
 }
