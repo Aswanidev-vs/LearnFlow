@@ -40,6 +40,7 @@ export function html(strings, ...values) {
 }
 
 export function clearElement(el) {
+  if (!el) return el;
   while (el.firstChild) el.removeChild(el.firstChild);
   return el;
 }

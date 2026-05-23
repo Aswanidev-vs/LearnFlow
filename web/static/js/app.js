@@ -24,7 +24,7 @@ const root = document.getElementById('root');
 let currentLayout = null;
 
 function applyTheme() {
-  const saved = localStorage.getItem('lf_theme') || 'light';
+  const saved = localStorage.getItem('lf_theme') || 'dark';
   UIActions.setTheme(saved);
 }
 
@@ -107,7 +107,35 @@ function createRouteHandler(renderFn, layoutType) {
       console.log('[LF] Rendered:', ctx.path);
     } catch (err) {
       console.error('[LF] Render error:', ctx.path, err);
-      pageContainer.innerHTML = '<div style="padding:2rem;color:#ef4444;font-family:monospace;"><h2>Render Error</h2><pre>' + err.message + '\n' + err.stack + '</pre></div>';
+
+      // Keep error UX consistent with the design system.
+      const message = (err && err.message) ? err.message : 'Unknown render error';
+
+      pageContainer.innerHTML = `
+        <div class="empty-state" role="alert" aria-live="polite">
+          <span class="empty-state__icon">${icon('alert')}</span>
+          <p class="empty-state__message">We couldn't load this page.</p>
+
+          <div style="margin-top: 0.75rem; max-width: 720px;">
+            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: 0.5rem;">
+              Error: ${message}
+            </p>
+
+            <details>
+              <summary style="cursor: pointer; font-size: var(--text-xs); color: var(--text-secondary);">
+                View technical details
+              </summary>
+              <pre style="margin-top: 0.75rem; padding: 1rem; border: 1px solid var(--border-default); border-radius: var(--radius-md); overflow: auto; background: var(--bg-muted);">
+${(err && err.stack) ? err.stack : ''}
+              </pre>
+            </details>
+
+            <a href="/" class="btn btn--primary" style="margin-top: 1rem; display: inline-block;">
+              Go Home
+            </a>
+          </div>
+        </div>
+      `;
     }
   };
 }
@@ -247,11 +275,9 @@ async function init() {
   interceptLinks();
   renderModal();
 
-  console.log('[LF] Starting router (before auth)...');
-  initRouter();
-
   console.log('[LF] Initializing auth...');
   try {
+    // Ensure auth state is stable before we let middleware/routes render app shell.
     await authService.init();
   } catch (e) {
     console.warn('[LF] Auth init skipped:', e.message);
@@ -260,6 +286,10 @@ async function init() {
 
   authReady = true;
   if (authResolve) authResolve();
+
+  console.log('[LF] Starting router (after auth)...');
+  initRouter();
+
   console.log('[LF] init() done');
 }
 

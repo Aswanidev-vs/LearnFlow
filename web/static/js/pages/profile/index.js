@@ -64,12 +64,6 @@ async function renderProfile(container, profile) {
         createElement('div', { className: 'profile-page__meta' }, [
           createElement('span', { innerHTML: `${icon('mapPin')} ${profile.location}` }),
           createElement('span', { innerHTML: `${icon('calendar')} Joined ${formatDate(profile.joinedAt)}` }),
-          profile.github && createElement('a', { 
-            href: `https://github.com/${profile.github}`, 
-            target: '_blank', 
-            className: 'profile-page__meta-link',
-            innerHTML: `${icon('github')} @${profile.github}` 
-          }),
         ]),
       ]),
       createElement('button', {
