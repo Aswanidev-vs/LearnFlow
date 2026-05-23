@@ -63,7 +63,7 @@ export function renderSidebar(container) {
 
   store.subscribe('ui.sidebarOpen', (isOpen) => {
     sidebar.classList.toggle('sidebar--open', isOpen);
-    overlay.classList.toggle('hidden', !isOpen);
+    overlay.classList.toggle('sidebar-overlay--visible', isOpen);
   });
 
   const isAuth = store.getState('auth.isAuthenticated');
