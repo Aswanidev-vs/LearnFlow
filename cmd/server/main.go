@@ -25,7 +25,7 @@ func main() {
 
 	database, err := db.NewFromEnv(ctx, rootDir)
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		log.Fatalf("[DB] Failed to initialize database: %v", err)
 	}
 	defer database.Close()
 
@@ -36,7 +36,17 @@ func main() {
 	}
 
 	sessions := auth.NewSessionStore(sessionSecret)
-	authHandler := handler.NewAuthHandler(sessions)
+	authHandler := handler.NewAuthHandler(sessions, database)
+	resetHandler := handler.NewResetHandler(database)
+	courseHandler := handler.NewCourseHandler(database)
+	lessonHandler := handler.NewLessonHandler(database)
+	assessmentHandler := handler.NewAssessmentHandler(database)
+	marketplaceHandler := handler.NewMarketplaceHandler(database)
+	certificateHandler := handler.NewCertificateHandler(database)
+	profileHandler := handler.NewProfileHandler(database)
+	dashboardHandler := handler.NewDashboardHandler(database)
+	chatHandler := handler.NewChatHandler()
+
 	rateLimiter := middleware.NewRateLimiterFromEnv()
 	validator := middleware.NewValidatorFromEnv()
 	corsConfig := middleware.NewCORSFromEnv()
@@ -55,6 +65,7 @@ func main() {
 	staticDir := filepath.Join(rootDir, "web", "static")
 	indexFile := filepath.Join(rootDir, "index.html")
 
+	// Auth routes
 	r.Route("/auth", func(r chi.Router) {
 		r.Use(rateLimiter.Middleware)
 		r.Use(validator.ValidateJSON)
@@ -62,13 +73,13 @@ func main() {
 		r.Post("/logout", authHandler.Logout)
 		r.Get("/me", authHandler.Me)
 		r.Post("/signup", authHandler.Signup)
-		r.Post("/reset-password", handler.ResetPasswordHandler)
-		r.Post("/reset-password/confirm", handler.ResetPasswordConfirmHandler)
+		r.Post("/reset-password", resetHandler.ResetPassword)
+		r.Post("/reset-password/confirm", resetHandler.ResetPasswordConfirm)
 	})
 
+	// API routes
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(rateLimiter.Middleware)
-		r.Use(validator.ValidateJSON)
 
 		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 			if err := database.Ping(r.Context()); err != nil {
@@ -81,16 +92,46 @@ func main() {
 			w.Write([]byte(`{"status":"ok","service":"learnflow","database":"healthy"}`))
 		})
 
+		// Public course listing and marketplace browsing
 		r.Group(func(r chi.Router) {
-			r.Use(sessions.RequireAuth)
-
-			r.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
-				sess := auth.GetSession(r)
-				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{"message":"Welcome ` + sess.Email + `","role":"` + sess.Role + `"}`))
-			})
+			r.Get("/courses", courseHandler.ListCourses)
+			r.Get("/marketplace/gigs", marketplaceHandler.ListGigs)
+			r.Get("/marketplace/gigs/{id}", marketplaceHandler.GetGig)
 		})
 
+		// Authenticated routes
+		r.Group(func(r chi.Router) {
+			r.Use(sessions.RequireAuth)
+			r.Use(validator.ValidateJSON)
+
+			// Dashboard
+			r.Get("/dashboard", dashboardHandler.GetDashboard)
+
+			// Courses
+			r.Get("/courses/{id}", courseHandler.GetCourse)
+			r.Post("/courses/{id}/enroll", courseHandler.EnrollCourse)
+
+			// Lessons
+			r.Get("/courses/{courseId}/lessons/{lessonId}", lessonHandler.GetLesson)
+			r.Post("/courses/{courseId}/lessons/{lessonId}/complete", lessonHandler.CompleteLesson)
+
+			// Assessments
+			r.Get("/assessments", assessmentHandler.ListAssessments)
+			r.Get("/assessments/{id}", assessmentHandler.GetAssessment)
+			r.Post("/assessments/{id}/submit", assessmentHandler.SubmitAssessment)
+
+			// Profile
+			r.Get("/profile", profileHandler.GetProfile)
+			r.Put("/profile", profileHandler.UpdateProfile)
+
+			// Certificates
+			r.Get("/certificates", certificateHandler.ListCertificates)
+
+			// AI Chat
+			r.Post("/ai/chat", chatHandler.SendMessage)
+		})
+
+		// Certificate download (public for preview)
 		r.Get("/certificates/{id}/download", handler.DownloadCertificate)
 	})
 
@@ -124,9 +165,9 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("LearnFlow server starting on http://localhost:%s", port)
+		log.Printf("[SERVER] LearnFlow starting on http://localhost:%s", port)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
+			log.Fatalf("[SERVER] Error: %v", err)
 		}
 	}()
 
@@ -135,11 +176,12 @@ func main() {
 	<-quit
 
 	log.Printf("[SERVER] Shutting down gracefully...")
+	sessions.Stop()
 	shutdownCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("Forced shutdown: %v", err)
+		log.Fatalf("[SERVER] Forced shutdown: %v", err)
 	}
 	log.Printf("[SERVER] Stopped")
 }
@@ -177,7 +219,7 @@ func fileServer(r chi.Router, path string, root http.FileSystem) {
 		rctx := chi.RouteContext(r.Context())
 		pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
 		if strings.HasSuffix(r.URL.Path, ".js") || strings.HasSuffix(r.URL.Path, ".css") {
-			w.Header().Set("Cache-Control", "no-cache, must-revalidate")
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		}
 		fs := http.StripPrefix(pathPrefix, http.FileServer(root))
 		fs.ServeHTTP(w, r)
