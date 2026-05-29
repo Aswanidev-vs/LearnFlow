@@ -13,8 +13,8 @@ export function renderNavbar(container) {
         onClick: () => UIActions.toggleSidebar(),
       }),
       createElement('a', { className: 'navbar__brand', href: '/' }, [
-        createElement('span', { className: 'navbar__logo', innerHTML: icon('bolt') }),
-        createElement('span', { className: 'navbar__name', textContent: AppConfig.APP_NAME }),
+        createElement('span', { className: 'navbar__brand-icon', innerHTML: icon('bolt') }),
+        createElement('span', { className: 'navbar__name', textContent: 'LearnFlow' }),
       ]),
     ]),
     createElement('div', { className: 'navbar__center' }, [

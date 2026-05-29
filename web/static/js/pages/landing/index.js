@@ -10,7 +10,7 @@ export function renderLandingPage(container) {
   const header = createElement('header', { className: 'landing__header' }, [
     createElement('div', { className: 'landing__nav container' }, [
       createElement('a', { className: 'landing__brand', href: '/' }, [
-        createElement('span', { innerHTML: icon('bolt') }),
+        createElement('span', { className: 'landing__brand-icon', innerHTML: icon('bolt') }),
         createElement('span', { textContent: 'LearnFlow' }),
       ]),
       createElement('div', { className: 'landing__actions' }, [

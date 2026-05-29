@@ -73,6 +73,10 @@
   z-index: 85;
 }
 
+.sidebar-overlay.hidden {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
