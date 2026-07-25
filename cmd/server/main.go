@@ -36,8 +36,7 @@ func main() {
 	}
 
 	sessions := auth.NewSessionStore(sessionSecret)
-	authHandler := handler.NewAuthHandler(sessions, database)
-	resetHandler := handler.NewResetHandler(database)
+	authHandler := handler.NewAuthHandler(sessions)
 	courseHandler := handler.NewCourseHandler(database)
 	lessonHandler := handler.NewLessonHandler(database)
 	assessmentHandler := handler.NewAssessmentHandler(database)
@@ -73,8 +72,8 @@ func main() {
 		r.Post("/logout", authHandler.Logout)
 		r.Get("/me", authHandler.Me)
 		r.Post("/signup", authHandler.Signup)
-		r.Post("/reset-password", resetHandler.ResetPassword)
-		r.Post("/reset-password/confirm", resetHandler.ResetPasswordConfirm)
+		r.Post("/reset-password", handler.ResetPasswordHandler)
+		r.Post("/reset-password/confirm", handler.ResetPasswordConfirmHandler)
 	})
 
 	// API routes

@@ -16,14 +16,14 @@ export async function renderLessonPage(container, { courseId, lessonId }) {
     const course = await courseService.getCourseById(courseId);
 
     if (!lesson || !course) {
-      container.innerHTML = '<p class="error-text">Lesson not found.</p>';
+      container.innerHTML = '<p class="text-secondary" role="alert">Lesson not found.</p>';
       return;
     }
 
     CourseActions.setCurrentLesson(lesson);
     return renderLesson(container, lesson, course);
   } catch (error) {
-    container.innerHTML = '<p class="error-text">Failed to load lesson.</p>';
+    container.innerHTML = '<p class="text-secondary" role="alert">Failed to load lesson.</p>';
   }
 }
 
@@ -42,26 +42,42 @@ function renderLesson(container, lesson, course) {
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
-  const page = createElement('div', { className: 'lesson-viewer' });
+  const page = createElement('div', { className: 'chat-page' });
 
-  const sidebar = createElement('aside', { className: 'lesson-viewer__sidebar' }, [
-    createElement('div', { className: 'lesson-viewer__course-info' }, [
-      createElement('a', { className: 'lesson-viewer__back', href: `/courses/${cid}`, textContent: '\u2190 Back to Course' }),
-      createElement('h3', { className: 'lesson-viewer__course-title', textContent: course.title }),
+  // --- Sidebar (Course Navigation) ---
+  const sidebar = createElement('aside', {
+    className: 'sidebar',
+    role: 'navigation',
+    'aria-label': 'Course lessons',
+    style: 'top: var(--navbar-h); padding-top: var(--sp-6);',
+  }, [
+    createElement('div', { className: 'px-4 mb-4' }, [
+      createElement('a', {
+        className: 'text-secondary text-sm font-medium',
+        href: `/courses/${cid}`,
+        textContent: '← Back to Course',
+        onClick: (e) => { e.preventDefault(); navigateTo(`/courses/${cid}`); },
+        'aria-label': 'Go back to course overview',
+      }),
+      createElement('h3', { className: 'font-display font-semibold mt-2 mb-3 text-sm', textContent: course.title }),
       renderProgressBar(course.progress),
     ]),
-    createElement('div', { className: 'lesson-viewer__nav' },
+    createElement('div', { className: 'sidebar__nav' },
       course.modules.map((mod) =>
-        createElement('div', { className: 'lesson-viewer__module' }, [
-          createElement('h4', { className: 'lesson-viewer__module-title', textContent: mod.title }),
-          createElement('ul', {},
+        createElement('div', { className: 'px-4 mb-4' }, [
+          createElement('h4', { className: 'text-xs font-semibold text-muted uppercase mb-2', style: 'letter-spacing: var(--tracking-widest);', textContent: mod.title }),
+          createElement('ul', { className: 'sidebar__list' },
             mod.lessons.map((l) =>
-              createElement('li', {
-                className: `lesson-viewer__lesson-link ${l.id === lid ? 'lesson-viewer__lesson-link--active' : ''} ${l.completed ? 'lesson-viewer__lesson-link--completed' : ''}`,
-                onClick: () => navigateTo(`/courses/${cid}/lessons/${l.id}`),
-              }, [
-                createElement('span', { innerHTML: l.completed ? icon('check') + ' ' : l.type === 'video' ? icon('play') + ' ' : icon('file') + ' ' }),
-                createElement('span', { textContent: l.title }),
+              createElement('li', {}, [
+                createElement('a', {
+                  className: `sidebar__link ${l.id === lid ? 'sidebar__link--active' : ''}`,
+                  onClick: (e) => { e.preventDefault(); navigateTo(`/courses/${cid}/lessons/${l.id}`); },
+                  href: '#',
+                  'aria-label': `${l.completed ? 'Completed: ' : ''}${l.title}`,
+                }, [
+                  createElement('span', { className: 'sidebar__icon', innerHTML: l.completed ? icon('check') : l.type === 'video' ? icon('play') : icon('file'), 'aria-hidden': 'true' }),
+                  createElement('span', { textContent: l.title }),
+                ])
               ])
             )
           ),
@@ -70,53 +86,64 @@ function renderLesson(container, lesson, course) {
     ),
   ]);
 
-  const main = createElement('div', { className: 'lesson-viewer__main' });
+  // --- Main Content ---
+  const main = createElement('div', { className: 'app__content', style: 'padding: var(--sp-8);' });
 
   if (lesson.type === 'video') {
     main.appendChild(
-      createElement('div', { className: 'lesson-viewer__video' }, [
-        createElement('div', { className: 'video-placeholder' }, [
-          createElement('div', { className: 'video-placeholder__play' }, [
-            createElement('span', { innerHTML: icon('play') }),
+      createElement('div', { className: 'card mb-6', style: 'padding: 0; overflow: hidden;' }, [
+        createElement('div', {
+          className: 'video-placeholder',
+          style: 'height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--space-800), var(--space-900));',
+        }, [
+          createElement('div', {
+            className: 'video-placeholder__play',
+            style: 'width: 80px; height: 80px; border-radius: 50%; background: var(--color-accent-muted); display: flex; align-items: center; justify-content: center; margin-bottom: var(--sp-4); box-shadow: var(--shadow-glow-lg);',
+          }, [
+            createElement('span', { innerHTML: icon('play'), style: 'font-size: var(--text-3xl); color: var(--cyan-400);' }),
           ]),
-          createElement('p', { textContent: 'Video Player Placeholder' }),
-          createElement('p', { className: 'text-muted', textContent: 'Video streaming will be integrated with the Go backend.' }),
+          createElement('p', { className: 'font-semibold', textContent: 'Video Player' }),
+          createElement('p', { className: 'text-muted text-sm', textContent: 'Video streaming will be integrated with the Go backend.' }),
         ]),
       ])
     );
   }
 
-  const content = createElement('div', { className: 'lesson-viewer__content' }, [
-    createElement('h1', { className: 'lesson-viewer__title', textContent: lesson.title }),
-    createElement('div', { className: 'lesson-viewer__meta' }, [
+  const content = createElement('div', { className: 'mb-8' }, [
+    createElement('h1', { className: 'font-display text-3xl font-bold mb-3', textContent: lesson.title }),
+    createElement('div', { className: 'flex items-center gap-3 text-sm text-muted mb-6' }, [
       createElement('span', { textContent: lesson.moduleName }),
-      createElement('span', { textContent: `\u00B7 ${Math.floor(lesson.duration / 60)} min` }),
+      createElement('span', { textContent: '·' }),
+      createElement('span', { textContent: `${Math.floor(lesson.duration / 60)} min` }),
       createElement('span', { innerHTML: lesson.type === 'video' ? icon('video') + ' Video' : icon('file') + ' Reading' }),
     ]),
-    lesson.type === 'text' && createElement('div', { className: 'lesson-viewer__body prose' }, [
+    lesson.type === 'text' && createElement('div', { className: 'prose' }, [
       createElement('p', { textContent: 'This is the lesson content area. In the full implementation, lesson content will be fetched from the Go backend API and rendered here as structured HTML.' }),
       createElement('p', { textContent: 'The content would include formatted text, code snippets, images, and interactive elements depending on the lesson type.' }),
     ]),
   ]);
 
-  const nav = createElement('div', { className: 'lesson-viewer__navigation' }, [
+  const nav = createElement('div', { className: 'flex items-center justify-between pt-6 border-t', style: 'border-color: var(--border-default);' }, [
     prevLesson
       ? createElement('button', {
           className: 'btn btn--ghost',
-          textContent: `\u2190 ${prevLesson.title}`,
+          textContent: `← ${prevLesson.title}`,
           onClick: () => navigateTo(`/courses/${cid}/lessons/${prevLesson.id}`),
+          'aria-label': `Previous lesson: ${prevLesson.title}`,
         })
       : createElement('div'),
     nextLesson
       ? createElement('button', {
           className: 'btn btn--primary',
-          textContent: `${nextLesson.title} \u2192`,
+          textContent: `${nextLesson.title} →`,
           onClick: () => navigateTo(`/courses/${cid}/lessons/${nextLesson.id}`),
+          'aria-label': `Next lesson: ${nextLesson.title}`,
         })
       : createElement('button', {
           className: 'btn btn--primary',
           textContent: 'Complete Course',
           onClick: () => navigateTo(`/courses/${cid}`),
+          'aria-label': 'Complete this course',
         }),
   ]);
 

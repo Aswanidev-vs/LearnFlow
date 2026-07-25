@@ -144,13 +144,13 @@ class AuthService {
     if (!res.ok) throw new Error(data.error || 'Login failed');
 
     AuthActions.setUser({
-      id: 'backend-user',
+      id: data.id || 'backend-user',
       email: data.email,
-      firstName: email.split('@')[0],
-      lastName: '',
-      fullName: email.split('@')[0],
+      firstName: data.firstName || email.split('@')[0],
+      lastName: data.lastName || '',
+      fullName: data.fullName || email.split('@')[0],
     });
-    AuthActions.setToken(data.token || 'backend-token');
+    AuthActions.setToken(data.token);
     return { success: true };
   }
 
@@ -175,19 +175,19 @@ class AuthService {
     const res = await fetch(`${AppConfig.AUTH_BASE_URL}/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, firstName, lastName }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Signup failed');
 
     AuthActions.setUser({
-      id: 'backend-user',
+      id: data.id || 'backend-user',
       email: data.email,
-      firstName: firstName || email.split('@')[0],
-      lastName: lastName || '',
-      fullName: firstName ? `${firstName} ${lastName}` : email.split('@')[0],
+      firstName: data.firstName || firstName || email.split('@')[0],
+      lastName: data.lastName || lastName || '',
+      fullName: data.fullName || (firstName ? `${firstName} ${lastName}` : email.split('@')[0]),
     });
-    AuthActions.setToken(data.token || 'backend-token');
+    AuthActions.setToken(data.token);
     return { success: true };
   }
 
@@ -219,14 +219,7 @@ class AuthService {
       return;
     }
 
-    AuthActions.setUser({
-      id: 'demo-oauth',
-      email: `${provider}-user@learnflow.dev`,
-      firstName: provider.charAt(0).toUpperCase() + provider.slice(1),
-      lastName: 'User',
-      fullName: `${provider} User`,
-    });
-    AuthActions.setToken('oauth-token');
+    throw new Error('OAuth requires Clerk authentication. Please configure a valid Clerk publishable key.');
   }
 
   async handleRedirectCallback() {

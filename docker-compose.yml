@@ -1,0 +1,41 @@
+version: '3.8'
+services:
+  learnflow:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DB_DRIVER=sqlite
+      - SQLITE_PATH=/data/learnflow.db
+      - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production}
+      - SUPER-SECRET_KEY=${SUPER_SECRET_KEY:-change-me-in-production}
+      - ENVIRONMENT=production
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - RATE_LIMIT_RPM=60
+      - MAX_BODY_SIZE_MB=10
+    volumes:
+      - learnflow-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  learnflow-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: learnflow
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    profiles:
+      - postgres
+
+volumes:
+  learnflow-data:
+  pgdata:

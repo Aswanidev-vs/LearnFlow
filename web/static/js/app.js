@@ -6,6 +6,7 @@ import { renderAppShell, renderPublicShell, switchToAppShell, switchToPublicShel
 import { renderModal } from './components/ui/modal.js';
 import { highlightActiveLink } from './components/layout/sidebar.js';
 import { icon } from './utils/icons.js';
+import { escapeHtml } from './utils/dom.js';
 
 import { renderLandingPage } from './pages/landing/index.js';
 import { renderLoginPage, renderSignupPage } from './components/auth/authPages.js';
@@ -118,7 +119,7 @@ function createRouteHandler(renderFn, layoutType) {
 
           <div style="margin-top: 0.75rem; max-width: 720px;">
             <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: 0.5rem;">
-              Error: ${message}
+              Error: ${escapeHtml(message)}
             </p>
 
             <details>
@@ -126,7 +127,7 @@ function createRouteHandler(renderFn, layoutType) {
                 View technical details
               </summary>
               <pre style="margin-top: 0.75rem; padding: 1rem; border: 1px solid var(--border-default); border-radius: var(--radius-md); overflow: auto; background: var(--bg-muted);">
-${(err && err.stack) ? err.stack : ''}
+${escapeHtml((err && err.stack) ? err.stack : '')}
               </pre>
             </details>
 
@@ -177,6 +178,45 @@ function initRouter() {
   router.register('/signup', {
     handler: createRouteHandler((c) => renderSignupPage(c), 'public'),
     title: 'Sign Up',
+    layout: 'public',
+  });
+
+  router.register('/reset-password', {
+    handler: createRouteHandler((c) => {
+      c.innerHTML = `
+        <div class="auth-page">
+          <div class="auth-card">
+            <h2 class="auth-card__title">Reset Password</h2>
+            <p class="text-muted">Enter your email address to receive a password reset link.</p>
+            <form id="reset-password-form" class="auth-form">
+              <div class="form-group">
+                <label for="reset-email" class="form-label">Email</label>
+                <input type="email" id="reset-email" class="form-input" placeholder="you@example.com" required />
+              </div>
+              <button type="submit" class="btn btn--primary btn--full">Send Reset Link</button>
+            </form>
+            <p class="auth-card__footer"><a href="/login" class="link">Back to Sign In</a></p>
+          </div>
+        </div>
+      `;
+      c.querySelector('#reset-password-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = c.querySelector('#reset-email').value;
+        try {
+          const res = await fetch('/auth/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed to send reset link');
+          alert('Password reset link sent. Please check your email.');
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    }, 'public'),
+    title: 'Reset Password',
     layout: 'public',
   });
 

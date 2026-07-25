@@ -1,2 +1,2 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Main CSS - imports bundle.css with Digital Observatory design system */
 @import 'bundle.css';
