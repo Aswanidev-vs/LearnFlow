@@ -19,47 +19,54 @@ export async function renderDashboardPage(container) {
     DashboardActions.setProgress(data.progress);
     renderDashboard(container, data);
   } catch (error) {
-    container.innerHTML = '<p class="error-text">Failed to load dashboard data.</p>';
+    container.innerHTML = '<p class="text-secondary" role="alert">Failed to load dashboard data.</p>';
   }
 }
 
 function renderDashboard(container, data) {
   clearElement(container);
 
-  const page = createElement('div', { className: 'dashboard' });
+  const page = createElement('div', { className: 'page-container' });
 
-  const header = createElement('div', { className: 'dashboard__header' }, [
+  const header = createElement('div', { className: 'dashboard-header' }, [
     createElement('div', {}, [
-      createElement('h1', { className: 'dashboard__title', textContent: 'Dashboard' }),
-      createElement('p', { className: 'dashboard__greeting', textContent: `Welcome back! Here's your learning overview.` }),
+      createElement('h1', { className: 'dashboard-header__title font-display', textContent: 'Dashboard' }),
+      createElement('p', { className: 'dashboard-header__subtitle', textContent: `Welcome back! Here's your learning overview.` }),
     ]),
     createElement('button', {
       className: 'btn btn--primary',
       textContent: 'Browse Courses',
       onClick: () => router.navigate('/courses'),
+      'aria-label': 'Browse available courses',
     }),
   ]);
 
-  const statsGrid = createElement('div', { className: 'dashboard__stats' }, [
+  const statsGrid = createElement('div', { className: 'dashboard-stats' }, [
     renderStatCard({ icon: 'books', value: data.stats.enrolledCourses, label: 'Enrolled Courses' }),
     renderStatCard({ icon: 'check', value: data.stats.completedLessons, label: 'Lessons Completed' }),
     renderStatCard({ icon: 'trophy', value: data.stats.certificates, label: 'Certificates' }),
     renderStatCard({ icon: 'fire', value: `${data.stats.streak} days`, label: 'Learning Streak' }),
   ]);
 
-  const content = createElement('div', { className: 'dashboard__content' });
+  const contentGrid = createElement('div', { className: 'dashboard-grid' });
 
-  const progressSection = createElement('div', { className: 'dashboard__section' }, [
-    createElement('h2', { className: 'dashboard__section-title', textContent: 'Course Progress' }),
-    createElement('div', { className: 'dashboard__progress-list' },
+  const leftColumn = createElement('div', { className: 'flex flex-col gap-6' });
+
+  // --- Course Progress Section ---
+  const progressSection = createElement('div', { className: 'card' }, [
+    createElement('h2', { className: 'font-display text-xl font-semibold mb-4', textContent: 'Course Progress' }),
+    createElement('div', { className: 'flex flex-col gap-4' },
       data.progress.map((p) =>
         createElement('div', {
-          className: 'dashboard__progress-item card',
+          className: 'card card--interactive',
           onClick: () => router.navigate(`/courses/${p.courseId}`),
+          role: 'link',
+          tabIndex: 0,
+          'aria-label': `Continue course: ${p.title}`,
         }, [
-          createElement('div', { className: 'dashboard__progress-info' }, [
-            createElement('h3', { textContent: p.title }),
-            createElement('span', { className: 'text-muted', textContent: `${p.completedLessons}/${p.totalLessons} lessons` }),
+          createElement('div', { className: 'flex items-center justify-between mb-2' }, [
+            createElement('h3', { className: 'font-semibold', textContent: p.title }),
+            createElement('span', { className: 'text-muted text-sm', textContent: `${p.completedLessons}/${p.totalLessons} lessons` }),
           ]),
           renderProgressBar(p.progress),
         ])
@@ -67,16 +74,10 @@ function renderDashboard(container, data) {
     ),
   ]);
 
-  const activitySection = createElement('div', { className: 'dashboard__section' }, [
-    createElement('h2', { className: 'dashboard__section-title', textContent: 'Recent Activity' }),
-    createElement('div', { className: 'dashboard__activity-list' },
-      data.recentActivity.map((activity) => renderActivityItem(activity))
-    ),
-  ]);
-
-  const quickActions = createElement('div', { className: 'dashboard__section' }, [
-    createElement('h2', { className: 'dashboard__section-title', textContent: 'Quick Actions' }),
-    createElement('div', { className: 'dashboard__actions-grid' }, [
+  // --- Quick Actions Section ---
+  const quickActions = createElement('div', { className: 'card' }, [
+    createElement('h2', { className: 'font-display text-xl font-semibold mb-4', textContent: 'Quick Actions' }),
+    createElement('div', { className: 'dashboard-stats', style: 'grid-template-columns: repeat(2, 1fr);' }, [
       createActionCard('robot', 'Ask AI Assistant', 'Get help with any topic', '/ai-assistant'),
       createActionCard('check', 'View Assessments', 'Check your submissions', '/assessments'),
       createActionCard('briefcase', 'Browse Gigs', 'Find freelance work', '/marketplace'),
@@ -84,18 +85,37 @@ function renderDashboard(container, data) {
     ]),
   ]);
 
-  content.append(progressSection, activitySection, quickActions);
-  page.append(header, statsGrid, content);
+  leftColumn.append(progressSection, quickActions);
+
+  // --- Activity Section (right column) ---
+  const activitySection = createElement('div', { className: 'card' }, [
+    createElement('h2', { className: 'font-display text-xl font-semibold mb-4', textContent: 'Recent Activity' }),
+    createElement('div', {},
+      data.recentActivity.length > 0
+        ? data.recentActivity.map((activity) => renderActivityItem(activity))
+        : createElement('div', { className: 'empty-state', style: 'padding: var(--sp-8);' }, [
+            createElement('span', { className: 'empty-state__icon', innerHTML: icon('clock') }),
+            createElement('p', { className: 'empty-state__message', textContent: 'No activity yet' }),
+            createElement('p', { className: 'empty-state__description', textContent: 'Start a course to see your progress here.' }),
+          ])
+    ),
+  ]);
+
+  contentGrid.append(leftColumn, activitySection);
+  page.append(header, statsGrid, contentGrid);
   container.appendChild(page);
 }
 
 function createActionCard(iconName, title, description, path) {
   return createElement('div', {
-    className: 'action-card card',
+    className: 'action-card',
     onClick: () => router.navigate(path),
+    role: 'link',
+    tabIndex: 0,
+    'aria-label': `${title}: ${description}`,
   }, [
-    createElement('span', { className: 'action-card__icon', innerHTML: icon(iconName) }),
-    createElement('h3', { className: 'action-card__title', textContent: title }),
+    createElement('span', { className: 'action-card__icon', innerHTML: icon(iconName), 'aria-hidden': 'true' }),
+    createElement('h3', { className: 'action-card__title font-display', textContent: title }),
     createElement('p', { className: 'action-card__description', textContent: description }),
   ]);
 }

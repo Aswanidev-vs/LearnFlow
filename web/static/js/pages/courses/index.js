@@ -17,30 +17,34 @@ export async function renderCoursesPage(container) {
     CourseActions.setCourses(courses, pagination);
     renderCourses(container, courses, pagination);
   } catch (error) {
-    container.innerHTML = '<p class="error-text">Failed to load courses.</p>';
+    container.innerHTML = '<p class="text-secondary" role="alert">Failed to load courses.</p>';
   }
 }
 
 function renderCourses(container, courses, pagination) {
   clearElement(container);
 
-  const page = createElement('div', { className: 'courses-page' });
+  const page = createElement('div', { className: 'page-container' });
 
-  const header = createElement('div', { className: 'courses-page__header' }, [
-    createElement('h1', { className: 'courses-page__title', textContent: 'Course Catalog' }),
-    createElement('p', { className: 'courses-page__subtitle', textContent: 'Explore our expert-led courses and start building real-world skills.' }),
+  const header = createElement('div', { className: 'courses-header' }, [
+    createElement('div', {}, [
+      createElement('h1', { className: 'font-display text-3xl font-bold mb-2', textContent: 'Course Catalog' }),
+      createElement('p', { className: 'text-secondary', textContent: 'Explore our expert-led courses and start building real-world skills.' }),
+    ]),
   ]);
 
-  const filters = createElement('div', { className: 'courses-page__filters' }, [
-    createElement('div', { className: 'search-input' }, [
+  const filters = createElement('div', { className: 'courses-filters', role: 'search', 'aria-label': 'Course filters' }, [
+    createElement('div', { className: 'navbar__search', style: 'flex: 1; min-width: 240px;' }, [
+      createElement('span', { className: 'navbar__search-icon', innerHTML: icon('search') || '🔍', 'aria-hidden': 'true' }),
       createElement('input', {
-        className: 'form-input',
-        type: 'text',
+        className: 'navbar__search-input',
+        type: 'search',
         placeholder: 'Search courses...',
         id: 'course-search',
+        'aria-label': 'Search courses',
       }),
     ]),
-    createElement('select', { className: 'form-select', id: 'category-filter' }, [
+    createElement('select', { className: 'form-select', id: 'category-filter', 'aria-label': 'Filter by category' }, [
       createElement('option', { value: '', textContent: 'All Categories' }),
       createElement('option', { value: 'Backend Development', textContent: 'Backend Development' }),
       createElement('option', { value: 'Frontend Development', textContent: 'Frontend Development' }),
@@ -49,7 +53,7 @@ function renderCourses(container, courses, pagination) {
       createElement('option', { value: 'DevOps', textContent: 'DevOps' }),
       createElement('option', { value: 'Security', textContent: 'Security' }),
     ]),
-    createElement('select', { className: 'form-select', id: 'level-filter' }, [
+    createElement('select', { className: 'form-select', id: 'level-filter', 'aria-label': 'Filter by difficulty level' }, [
       createElement('option', { value: '', textContent: 'All Levels' }),
       createElement('option', { value: 'Beginner', textContent: 'Beginner' }),
       createElement('option', { value: 'Intermediate', textContent: 'Intermediate' }),
@@ -57,7 +61,7 @@ function renderCourses(container, courses, pagination) {
     ]),
   ]);
 
-  const grid = createElement('div', { className: 'courses-page__grid' });
+  const grid = createElement('div', { className: 'courses-grid', role: 'list', 'aria-label': 'Course list' });
 
   if (courses.length === 0) {
     grid.appendChild(renderEmptyState('No courses found matching your criteria.'));
@@ -97,7 +101,7 @@ function renderCourses(container, courses, pagination) {
         filtered.forEach((c) => grid.appendChild(renderCourseCard(c)));
       }
     } catch (err) {
-      grid.innerHTML = '<p class="error-text">Failed to filter courses.</p>';
+      grid.innerHTML = '<p class="text-secondary" role="alert">Failed to filter courses.</p>';
     }
   }, 300);
 
@@ -119,43 +123,50 @@ export async function renderCourseDetailPage(container, courseId) {
     CourseActions.setCurrentCourse(course);
     renderCourseDetail(container, course);
   } catch (error) {
-    container.innerHTML = '<p class="error-text">Failed to load course details.</p>';
+    container.innerHTML = '<p class="text-secondary" role="alert">Failed to load course details.</p>';
   }
 }
 
 function renderCourseDetail(container, course) {
   clearElement(container);
 
-  const page = createElement('div', { className: 'course-detail' });
+  const page = createElement('div', { className: 'page-container' });
 
-  const hero = createElement('div', { className: 'course-detail__hero' }, [
+  const hero = createElement('div', { style: 'margin-bottom: var(--sp-8);' }, [
     createElement('div', { className: 'container' }, [
-      createElement('div', { className: 'course-detail__breadcrumb' }, [
-        createElement('a', { href: '/courses', textContent: 'Courses', onClick: (e) => { e.preventDefault(); history.back(); } }),
-        createElement('span', { textContent: ' / ' }),
-        createElement('span', { textContent: course.title }),
+      createElement('nav', { className: 'mb-4', 'aria-label': 'Breadcrumb' }, [
+        createElement('a', {
+          href: '/courses',
+          className: 'text-secondary text-sm',
+          textContent: '← Courses',
+          onClick: (e) => { e.preventDefault(); history.back(); },
+        }),
+        createElement('span', { className: 'text-muted text-sm', textContent: ` / ${course.title}` }),
       ]),
-      createElement('h1', { className: 'course-detail__title', textContent: course.title }),
-      createElement('p', { className: 'course-detail__description', textContent: course.description }),
-      createElement('div', { className: 'course-detail__meta' }, [
-        createElement('span', { textContent: `⭐ ${course.rating}` }),
-        createElement('span', { textContent: `${(course.studentsCount / 1000).toFixed(1)}k students` }),
-        createElement('span', { textContent: course.duration }),
-        createElement('span', { textContent: `${course.lessonsCount} lessons` }),
+      createElement('h1', { className: 'font-display text-3xl font-bold mb-2', textContent: course.title }),
+      createElement('p', { className: 'text-secondary mb-4', style: 'max-width: 700px;', textContent: course.description }),
+      createElement('div', { className: 'flex items-center gap-4 mb-4 flex-wrap' }, [
+        createElement('span', { className: 'text-accent font-semibold text-sm', textContent: `⭐ ${course.rating}` }),
+        createElement('span', { className: 'text-muted text-sm', textContent: `${(course.studentsCount / 1000).toFixed(1)}k students` }),
+        createElement('span', { className: 'text-muted text-sm', textContent: course.duration }),
+        createElement('span', { className: 'text-muted text-sm', textContent: `${course.lessonsCount} lessons` }),
         createElement('span', { className: `badge badge--${course.level.toLowerCase()}`, textContent: course.level }),
       ]),
-      createElement('div', { className: 'course-detail__instructor' }, [
+      createElement('div', { className: 'flex items-center gap-2 text-sm text-secondary' }, [
         createElement('div', { className: 'avatar avatar--sm' }),
         createElement('span', { textContent: `By ${course.instructor.name}` }),
       ]),
     ]),
   ]);
 
-  const content = createElement('div', { className: 'course-detail__content container' });
+  const content = createElement('div', { className: 'course-detail container' });
 
   const sidebar = createElement('div', { className: 'course-detail__sidebar' }, [
-    createElement('div', { className: 'course-detail__enroll card' }, [
-      createElement('div', { className: 'course-detail__price', textContent: course.enrolled ? 'Enrolled' : `$${course.price}` }),
+    createElement('div', { className: 'card', style: 'padding: var(--sp-6);' }, [
+      createElement('div', {
+        className: 'font-display text-2xl font-bold text-accent mb-4',
+        textContent: course.enrolled ? 'Enrolled' : `$${course.price}`,
+      }),
       course.enrolled
         ? createElement('button', {
             className: 'btn btn--primary btn--full',
@@ -165,7 +176,6 @@ function renderCourseDetail(container, course) {
                 .flatMap((m) => m.lessons)
                 .find((l) => !l.completed);
               if (firstIncomplete) {
-                const module = course.modules.find((m) => m.lessons.includes(firstIncomplete));
                 window.location.href = `/courses/${course.id}/lessons/${firstIncomplete.id}`;
               }
             },
@@ -183,53 +193,60 @@ function renderCourseDetail(container, course) {
               }
             },
           }),
-      course.enrolled && course.progress > 0 && createElement('div', { className: 'course-detail__progress' }, [
-        createElement('div', { className: 'progress-bar' }, [
+      course.enrolled && course.progress > 0 && createElement('div', { className: 'mt-4' }, [
+        createElement('div', { className: 'progress-bar mb-2' }, [
           createElement('div', { className: 'progress-bar__fill', style: `width: ${course.progress}%` }),
         ]),
-        createElement('span', { textContent: `${course.progress}% complete` }),
+        createElement('span', { className: 'text-muted text-sm', textContent: `${course.progress}% complete` }),
       ]),
-      createElement('div', { className: 'course-detail__includes' }, [
-        createElement('h4', { textContent: 'This course includes:' }),
-        createElement('ul', {}, [
-          createElement('li', { textContent: `${course.lessonsCount} video lessons` }),
-          createElement('li', { textContent: 'Hands-on projects' }),
-          createElement('li', { textContent: 'GitHub-based assessment' }),
-          createElement('li', { textContent: 'Certificate of completion' }),
-          createElement('li', { textContent: 'Lifetime access' }),
+      createElement('div', { className: 'mt-6' }, [
+        createElement('h4', { className: 'font-semibold mb-2 text-sm', textContent: 'This course includes:' }),
+        createElement('ul', { className: 'flex flex-col gap-2' }, [
+          createElement('li', { className: 'text-secondary text-sm', textContent: `${course.lessonsCount} video lessons` }),
+          createElement('li', { className: 'text-secondary text-sm', textContent: 'Hands-on projects' }),
+          createElement('li', { className: 'text-secondary text-sm', textContent: 'GitHub-based assessment' }),
+          createElement('li', { className: 'text-secondary text-sm', textContent: 'Certificate of completion' }),
+          createElement('li', { className: 'text-secondary text-sm', textContent: 'Lifetime access' }),
         ]),
       ]),
     ]),
-    createElement('div', { className: 'course-detail__tags card' }, [
-      createElement('h4', { textContent: 'Tags' }),
-      createElement('div', { className: 'tag-list' },
+    createElement('div', { className: 'card mt-4', style: 'padding: var(--sp-6);' }, [
+      createElement('h4', { className: 'font-semibold mb-3 text-sm', textContent: 'Tags' }),
+      createElement('div', { className: 'flex flex-wrap gap-2' },
         course.tags.map((tag) => createElement('span', { className: 'tag', textContent: tag }))
       ),
     ]),
   ]);
 
-  const curriculum = createElement('div', { className: 'course-detail__curriculum' }, [
-    createElement('h2', { className: 'course-detail__section-title', textContent: 'Curriculum' }),
-    createElement('div', { className: 'course-detail__modules' },
+  const curriculum = createElement('div', {}, [
+    createElement('h2', { className: 'font-display text-2xl font-bold mb-6', textContent: 'Curriculum' }),
+    createElement('div', { className: 'flex flex-col gap-4' },
       course.modules.map((mod, i) =>
-        createElement('div', { className: 'module' }, [
-          createElement('div', { className: 'module__header' }, [
-            createElement('h3', { className: 'module__title', textContent: `Module ${i + 1}: ${mod.title}` }),
-            createElement('span', { className: 'module__count', textContent: `${mod.lessons.length} lessons` }),
+        createElement('div', { className: 'card', style: 'padding: var(--sp-5);' }, [
+          createElement('div', { className: 'flex items-center justify-between mb-3' }, [
+            createElement('h3', { className: 'font-display font-semibold', textContent: `Module ${i + 1}: ${mod.title}` }),
+            createElement('span', { className: 'badge badge--info', textContent: `${mod.lessons.length} lessons` }),
           ]),
-          createElement('ul', { className: 'module__lessons' },
+          createElement('ul', { className: 'flex flex-col gap-1' },
             mod.lessons.map((lesson) =>
               createElement('li', {
-                className: `lesson-item ${lesson.completed ? 'lesson-item--completed' : ''}`,
+                className: `flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${lesson.completed ? '' : 'hover:bg-muted'}`,
                 onClick: () => {
                   if (course.enrolled) {
                     window.location.href = `/courses/${course.id}/lessons/${lesson.id}`;
                   }
                 },
+                role: 'link',
+                tabIndex: 0,
+                'aria-label': `${lesson.completed ? 'Completed: ' : ''}${lesson.title} - ${formatLessonDuration(lesson.duration)}`,
               }, [
-                createElement('span', { className: 'lesson-item__icon', innerHTML: lesson.completed ? icon('check') : lesson.type === 'video' ? icon('play') : icon('file') }),
-                createElement('span', { className: 'lesson-item__title', textContent: lesson.title }),
-                createElement('span', { className: 'lesson-item__duration', textContent: formatLessonDuration(lesson.duration) }),
+                createElement('span', {
+                  className: lesson.completed ? 'text-accent' : 'text-muted',
+                  innerHTML: lesson.completed ? icon('check') : lesson.type === 'video' ? icon('play') : icon('file'),
+                  'aria-hidden': 'true',
+                }),
+                createElement('span', { className: `flex-1 text-sm ${lesson.completed ? 'text-secondary' : ''}`, textContent: lesson.title }),
+                createElement('span', { className: 'text-muted text-xs', textContent: formatLessonDuration(lesson.duration) }),
               ])
             )
           ),

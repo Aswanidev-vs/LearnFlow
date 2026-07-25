@@ -3,7 +3,7 @@ import MockData from './mockData.js';
 import { sleep } from '../utils/helpers.js';
 import { store } from '../store/index.js';
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 class CourseService {
   async getCourses(filters = {}) {

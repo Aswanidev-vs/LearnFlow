@@ -31,12 +31,14 @@ type SessionStore struct {
 	mu       sync.RWMutex
 	sessions map[string]*Session
 	secret   []byte
+	stopCh   chan struct{}
 }
 
 func NewSessionStore(secret string) *SessionStore {
 	s := &SessionStore{
 		sessions: make(map[string]*Session),
 		secret:   []byte(secret),
+		stopCh:   make(chan struct{}),
 	}
 	go s.cleanup()
 	return s
@@ -153,14 +155,24 @@ func splitCookieValue(val string) []string {
 
 func (s *SessionStore) cleanup() {
 	ticker := time.NewTicker(15 * time.Minute)
-	for range ticker.C {
-		now := time.Now()
-		s.mu.Lock()
-		for id, sess := range s.sessions {
-			if now.After(sess.ExpiresAt) {
-				delete(s.sessions, id)
+	for {
+		select {
+		case <-ticker.C:
+			now := time.Now()
+			s.mu.Lock()
+			for id, sess := range s.sessions {
+				if now.After(sess.ExpiresAt) {
+					delete(s.sessions, id)
+				}
 			}
+			s.mu.Unlock()
+		case <-s.stopCh:
+			ticker.Stop()
+			return
 		}
-		s.mu.Unlock()
 	}
+}
+
+func (s *SessionStore) Stop() {
+	close(s.stopCh)
 }

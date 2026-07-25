@@ -73,3 +73,9 @@ export function delegate(parent, eventType, selector, handler) {
     }
   });
 }
+
+export function escapeHtml(str) {
+  if (typeof str !== 'string') return '';
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  return str.replace(/[&<>"']/g, (ch) => map[ch]);
+}
